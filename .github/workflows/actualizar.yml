@@ -1,7 +1,7 @@
 name: Actualizar métricas
 on:
   schedule:
-    - cron: "17 */3 * * *"   # cada 3 horas
+    - cron: "17 */3 * * *"   # cada 3 horas (programado por wuilkindelgado-cell)
   workflow_dispatch: {}
 permissions:
   contents: write
