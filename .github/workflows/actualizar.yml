@@ -1,0 +1,32 @@
+name: Actualizar métricas
+on:
+  schedule:
+    - cron: "17 */3 * * *"   # cada 3 horas
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency:
+  group: metricas
+  cancel-in-progress: false
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q -r motor/requirements.txt
+      - name: Recolectar métricas
+        env:
+          DELGA_ESTADO_CLAVE: ${{ secrets.DELGA_ESTADO_CLAVE }}
+          DELGA_SECRETOS: ${{ runner.temp }}/secretos
+          DELGA_DATOS: ${{ runner.temp }}/datos
+        run: python motor/delga.py nube-ciclo
+      - name: Guardar
+        run: |
+          git config user.name "delga-bot"
+          git config user.email "delga-bot@users.noreply.github.com"
+          git add datos.enc.json estado.enc.json
+          git diff --cached --quiet || git commit -m "Métricas $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push

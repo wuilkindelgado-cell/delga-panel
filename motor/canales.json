@@ -1,0 +1,44 @@
+{
+  "canales": [
+    {
+      "id": "yt-delgatronics",
+      "nombre": "Delgatronics",
+      "plataforma": "youtube",
+      "marca": "delgatronics",
+      "channel_id": "UCN0Z66HlivRGSeEy1n-f-WA",
+      "handle": "@Delgatronics",
+      "url": "https://www.youtube.com/@Delgatronics",
+      "color": "#00e5ff",
+      "categoria_defecto": "28"
+    },
+    {
+      "id": "yt-delgafutbol",
+      "nombre": "Delgafutbol",
+      "plataforma": "youtube",
+      "marca": "delgafutbol",
+      "channel_id": "UCTCq4x45lLQlM2MLmEtY6iQ",
+      "handle": "@delgafutbol",
+      "url": "https://www.youtube.com/@delgafutbol",
+      "color": "#2ee66b",
+      "categoria_defecto": "17"
+    },
+    {
+      "id": "tt-delgatronics",
+      "nombre": "Delgatronics",
+      "plataforma": "tiktok",
+      "marca": "delgatronics",
+      "handle": "@delgatronics",
+      "url": "https://www.tiktok.com/@delgatronics",
+      "color": "#00e5ff"
+    },
+    {
+      "id": "tt-delgafutbol",
+      "nombre": "Delgafutbol",
+      "plataforma": "tiktok",
+      "marca": "delgafutbol",
+      "handle": "",
+      "url": "",
+      "color": "#2ee66b"
+    }
+  ]
+}
