@@ -19,7 +19,7 @@ const media = (a) => (a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0);
 const mediana = (a) => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
 
 let D = null;
-const E = {tab: leer('dp-tab') || 'inicio', filtro: leer('dp-filtro') || 'todos', periodo: leer('dp-periodo') || '28', orden: 'recientes', vfiltro: 'todos', q: '', canalA: null};
+const E = {tab: (leer('dp-tab') || 'inicio').replace('consejos', 'plan'), filtro: leer('dp-filtro') || 'todos', periodo: leer('dp-periodo') || '28', orden: 'recientes', vfiltro: 'todos', q: '', canalA: null};
 
 // ------------------------------------------------------------------ datos
 const b64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
@@ -173,7 +173,7 @@ function vInicio() {
   const ultimos = [...vids].sort((a, b) => b.publicado.localeCompare(a.publicado)).slice(0, 3);
   if (ultimos.length) h += `<div class="card"><h3>🆕 Lo último que subiste</h3>${ultimos.map((v) => filaVideo(v)).join('')}</div>`;
   const recs = D.recomendaciones.filter((r) => E.filtro === 'todos' || r.canal === 'general' || filtrar(D.canales).some((c) => c.id === r.canal)).slice(0, 2);
-  if (recs.length) h += `<div class="card"><h3>💡 Lo más importante ahora <button class="chip" data-tab="consejos">ver todo</button></h3>${recs.map(filaConsejo).join('')}</div>`;
+  if (recs.length) h += `<div class="card"><h3>💡 Lo más importante ahora <button class="chip" data-tab="plan">ver plan</button></h3>${recs.map(filaConsejo).join('')}</div>`;
   return h;
 }
 
@@ -272,7 +272,7 @@ function vMetas() {
     const ritmo = ((c.delta28 || {})[m.metrica] ?? null) != null ? c.delta28[m.metrica] / 28 : (c.delta7 || {})[m.metrica] != null ? c.delta7[m.metrica] / 7 : null;
     const falta = m.objetivo - actual;
     let eta = 'Calculando ritmo: hace falta al menos un día de historial.';
-    if (falta <= 0) eta = '🎉 ¡Meta cumplida!';
+    if (falta <= 0) { eta = '🎉 ¡Meta cumplida!'; const k = `dp-fiesta-${m.canal}-${m.metrica}-${m.objetivo}`; if (!leer(k)) { guardar(k, '1'); setTimeout(confeti, 300); } }
     else if (ritmo != null && ritmo > 0) { const dias = Math.ceil(falta / ritmo); const f = new Date(Date.now() + dias * 864e5); eta = `Al ritmo actual (${fmt(ritmo)}/día) llegas en ~${fmt(dias)} días · ${f.toLocaleDateString('es', {day: 'numeric', month: 'short', year: 'numeric'})}`; }
     else if (ritmo != null) eta = 'Sin crecimiento reciente: publica para reactivar el ritmo.';
     h += `<div class="meta-item"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><div>${plat(c.plataforma)} <b>${esc(c.nombre)}</b> · ${m.metrica}</div><button class="chip" data-borrar-meta="${i}">✕</button></div>
@@ -346,13 +346,14 @@ $('#hoja').addEventListener('touchstart', (e) => { if ($('#hoja').scrollTop <= 0
 $('#hoja').addEventListener('touchmove', (e) => { if (toqueY != null && e.touches[0].clientY - toqueY > 90) { toqueY = null; cerrarHoja(); } }, {passive: true});
 
 // ------------------------------------------------------------------ pintar y eventos
-const TITULOS = {inicio: 'Inicio', videos: 'Videos', analizar: 'Analizar', metas: 'Metas', consejos: 'Consejos'};
+const TABS = ['inicio', 'videos', 'plan', 'analizar', 'metas'];
+const TITULOS = {inicio: 'Inicio', videos: 'Videos', plan: 'Plan', analizar: 'Analizar', metas: 'Metas'};
 function pintar() {
   if (!D) return;
   graficas = {};
   $('#titulo').textContent = TITULOS[E.tab];
   $('#actualizado').textContent = `Actualizado ${hace(D.generado)} · ${new Date(D.generado).toLocaleString('es', {weekday: 'short', hour: '2-digit', minute: '2-digit'})}`;
-  $('#vista').innerHTML = {inicio: vInicio, videos: vVideos, analizar: vAnalizar, metas: vMetas, consejos: vConsejos}[E.tab]();
+  $('#vista').innerHTML = {inicio: vInicio, videos: vVideos, plan: vPlan, analizar: vAnalizar, metas: vMetas}[E.tab]();
   document.querySelectorAll('nav button').forEach((b) => b.classList.toggle('on', b.dataset.tab === E.tab));
   const q = $('#q');
   if (q) q.addEventListener('input', () => { E.q = q.value; const pos = q.selectionStart; pintar(); const n = $('#q'); n.focus(); n.setSelectionRange(pos, pos); });
@@ -368,7 +369,7 @@ document.addEventListener('click', (e) => {
     const l = metas(); l.push({canal: $('#mCanal').value, metrica: $('#mMetrica').value, objetivo: obj}); guardar('dp-metas', JSON.stringify(l));
   }
   if (t.dataset.borrarMeta != null) { const l = metas(); l.splice(Number(t.dataset.borrarMeta), 1); guardar('dp-metas', JSON.stringify(l.length ? l : [])); if (!l.length) guardar('dp-metas', '[{"canal":"","metrica":"seguidores","objetivo":1}]'); }
-  if (t.dataset.tab) { E.tab = t.dataset.tab; guardar('dp-tab', E.tab); window.scrollTo({top: 0}); }
+  if (t.dataset.tab) { const a = TABS.indexOf(E.tab), b = TABS.indexOf(t.dataset.tab); irA(t.dataset.tab, b > a ? 'izq' : b < a ? 'der' : null); return; }
   if (t.dataset.canal) { const c = D.canales.find((x) => x.id === t.dataset.canal); E.filtro = c.plataforma === 'youtube' && E.filtro === 'youtube' ? c.marca : c.marca; E.tab = 'analizar'; window.scrollTo({top: 0}); }
   if (t.dataset.filtro) { E.filtro = t.dataset.filtro; guardar('dp-filtro', E.filtro); }
   if (t.dataset.periodo) { E.periodo = t.dataset.periodo; guardar('dp-periodo', E.periodo); }
@@ -387,6 +388,5 @@ $('#compartir').addEventListener('click', async () => {
 });
 document.addEventListener('visibilitychange', () => { if (!document.hidden && D) entrar(leer('dp-clave') || '', true); });
 
-const cl = leer('dp-clave') || leer('delga-clave');
-if (cl) entrar(cl, true);
+addEventListener('load', () => { const cl = leer('dp-clave') || leer('delga-clave'); if (cl) entrar(cl, true).then(() => typeof contar === 'function' && contar()); });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});

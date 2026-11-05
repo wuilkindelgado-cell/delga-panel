@@ -59,6 +59,9 @@ def publicar() -> str:
     if not datos:
         raise SystemExit("Primero ejecuta  delga metricas")
     escribir_json(sitio / "datos.enc.json", cifrar(datos, clave_panel()))
+    from .calendario import generar_ics
+
+    (sitio / "recordatorios.ics").write_text(generar_ics(datos), encoding="utf-8", newline="")
     _git("add", "-A", cwd=sitio)
     if _git("status", "--porcelain", cwd=sitio):
         _git("-c", "user.name=delga-bot", "-c", "user.email=delga-bot@users.noreply.github.com", "commit", "-m", f"Métricas {datos['generado']}", cwd=sitio)

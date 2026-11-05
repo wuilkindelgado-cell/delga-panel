@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
 <title>Delga Panel</title>
 <meta name="theme-color" content="#070b17">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -151,6 +152,41 @@ nav{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;background:rg
 nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;font-weight:600;color:var(--tenue);padding:5px 0}
 nav button svg{width:23px;height:23px}
 nav button.on{color:var(--cian)}
+/* sensación de app nativa */
+html{touch-action:manipulation;-webkit-text-size-adjust:100%}
+html,body{overscroll-behavior:none}
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea{-webkit-user-select:text;user-select:text;font-size:16px!important}
+img{-webkit-user-drag:none}
+button,.chip,.canal,.fila-video,.kpi,a.btn{transition:transform .12s ease,opacity .12s ease}
+button:active,.chip:active,.canal:active,.fila-video:active,a.btn:active{transform:scale(.97);opacity:.85}
+header{position:sticky;top:0;z-index:15;margin:0 calc(-1 * max(14px,env(safe-area-inset-left,0px))) 12px;padding:calc(var(--sa-top) + 6px) max(14px,env(safe-area-inset-left,0px)) 10px;background:rgba(7,11,23,.82);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid transparent;transition:border-color .2s}
+header.borde{border-bottom-color:var(--borde)}
+body{padding-top:0}
+#vista{animation:entra .22s ease}
+#vista.izq{animation:desdeDer .24s ease}#vista.der{animation:desdeIzq .24s ease}
+@keyframes entra{from{opacity:.4;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes desdeDer{from{opacity:.3;transform:translateX(28px)}to{opacity:1;transform:none}}
+@keyframes desdeIzq{from{opacity:.3;transform:translateX(-28px)}to{opacity:1;transform:none}}
+#tirar{position:fixed;left:50%;top:calc(var(--sa-top) + 64px);z-index:25;width:38px;height:38px;margin-left:-19px;border-radius:50%;background:var(--capa2);border:1px solid var(--borde);display:grid;place-items:center;font-size:18px;color:var(--cian);opacity:0;transform:translateY(-30px) scale(.6);pointer-events:none}
+#tirar.listo{color:var(--verde)}
+.toast{position:fixed;left:50%;bottom:calc(var(--sa-bot) + 84px);transform:translateX(-50%);background:var(--capa3);border:1px solid var(--borde);padding:10px 16px;border-radius:999px;font-size:13px;font-weight:600;z-index:35;animation:entra .2s ease}
+.tarea{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--borde);width:100%;text-align:left}
+.tarea:last-child{border:0}
+.check{width:24px;height:24px;border-radius:8px;border:2px solid var(--borde);flex:none;display:grid;place-items:center;font-size:14px;font-weight:900;color:#00131a}
+.tarea.hecha .check{background:var(--verde);border-color:var(--verde)}
+.tarea.hecha .tt{text-decoration:line-through;color:var(--suave)}
+.semana{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:10px}
+.semana div{text-align:center;padding:7px 0;border-radius:10px;background:#ffffff08;font-size:11px;color:var(--suave);font-weight:600}
+.semana div.hoy{outline:2px solid var(--cian)}
+.semana div.pub{background:#2ee66b26;color:var(--verde)}
+.semana div.plan{background:#00e5ff1f;color:var(--cian)}
+.semana b{display:block;font-size:15px;color:var(--texto);margin-top:2px}
+.idea{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--borde)}
+.idea:last-child{border:0}
+.idea span{flex:1}
+.racha{font-size:40px;font-weight:800;line-height:1}
+#confeti{position:fixed;inset:0;pointer-events:none;z-index:50}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -164,6 +200,7 @@ nav button.on{color:var(--cian)}
   <div id="errorClave"></div>
 </div>
 
+<div id="tirar">↻</div><canvas id="confeti"></canvas>
 <header>
   <div style="min-width:0"><h1 id="titulo">Inicio</h1><small id="actualizado"></small></div>
   <div style="display:flex;gap:8px">
@@ -179,10 +216,11 @@ nav button.on{color:var(--cian)}
 <nav>
   <button data-tab="inicio" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Inicio</button>
   <button data-tab="videos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M10 9l5 3-5 3z"/></svg>Videos</button>
+  <button data-tab="plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4M8 15l2.5 2.5L16 13"/></svg>Plan</button>
   <button data-tab="analizar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Analizar</button>
   <button data-tab="metas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg>Metas</button>
-  <button data-tab="consejos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/></svg>Consejos</button>
 </nav>
 <script src="app.js"></script>
+<script src="plan.js"></script>
 </body>
 </html>

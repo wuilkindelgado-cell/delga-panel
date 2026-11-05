@@ -43,12 +43,13 @@ jobs:
           DELGA_ESTADO_CLAVE: ${{ secrets.DELGA_ESTADO_CLAVE }}
           DELGA_SECRETOS: ${{ runner.temp }}/secretos
           DELGA_DATOS: ${{ runner.temp }}/datos
+          TZ: America/Lima
         run: python motor/delga.py nube-ciclo
       - name: Guardar
         run: |
           git config user.name "delga-bot"
           git config user.email "delga-bot@users.noreply.github.com"
-          git add datos.enc.json estado.enc.json
+          git add datos.enc.json estado.enc.json recordatorios.ics
           git diff --cached --quiet || git commit -m "Métricas $(date -u +%Y-%m-%dT%H:%MZ)"
           git push
 """
@@ -109,6 +110,9 @@ def ciclo() -> None:
     _desempaquetar(descifrar(leer_json(raiz_repo / "estado.enc.json"), clave))
     datos = recolectar()
     escribir_json(raiz_repo / "datos.enc.json", cifrar(datos, clave_panel()))
+    from .calendario import generar_ics
+
+    (raiz_repo / "recordatorios.ics").write_text(generar_ics(datos), encoding="utf-8", newline="")
     escribir_json(raiz_repo / "estado.enc.json", cifrar(_empaquetar(), clave))
     ok = [c["id"] for c in datos["canales"] if c["estado"] == "ok"]
     print(f"Actualizado {datos['generado']} · canales OK: {ok}")

@@ -133,5 +133,8 @@ def recolectar() -> dict:
         "canales": canales,
         "recomendaciones": analisis.recomendaciones(canales),
     }
+    from .calendario import plan
+
+    resultado["plan"] = plan(resultado)
     escribir_json(DATOS / "metricas.json", resultado)
     return resultado

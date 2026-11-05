@@ -28,6 +28,6 @@ jobs:
         run: |
           git config user.name "delga-bot"
           git config user.email "delga-bot@users.noreply.github.com"
-          git add datos.enc.json estado.enc.json
+          git add datos.enc.json estado.enc.json recordatorios.ics
           git diff --cached --quiet || git commit -m "Métricas $(date -u +%Y-%m-%dT%H:%MZ)"
           git push
