@@ -33,12 +33,13 @@ def plan(datos: dict) -> dict:
         mejores = sorted({mejores[0], (mejores[0] + 3) % 7})
     validas = {f: x for f, x in por_franja.items() if f != "madrugada" and len(x) >= 2}
     franja = max(validas, key=lambda f: stx.mean(validas[f])) if validas else "tarde"
-    return {"dias": mejores, "hora": HORA_FRANJA[franja], "franja": franja}
+    # Frecuencia acordada con el usuario (2026-11-04): 1 video diario. "destacados" = mejores días.
+    return {"dias": list(range(7)), "destacados": mejores, "hora": HORA_FRANJA[franja], "franja": franja, "frecuencia": "diaria"}
 
 
-def _evento(uid, dia, hora, minuto, dur, titulo, desc, aviso_min):
+def _evento(uid, dia, hora, minuto, dur, titulo, desc, aviso_min, freq="WEEKLY"):
     hoy = dt.date.today()
-    primero = hoy + dt.timedelta(days=(dia - hoy.weekday()) % 7)
+    primero = hoy + dt.timedelta(days=(dia - hoy.weekday()) % 7) if freq == "WEEKLY" else hoy
     ini = dt.datetime.combine(primero, dt.time(hora, minuto))
     fin = ini + dt.timedelta(minutes=dur)
     f = lambda x: x.strftime("%Y%m%dT%H%M%S")
@@ -49,7 +50,7 @@ def _evento(uid, dia, hora, minuto, dur, titulo, desc, aviso_min):
             f"DTSTAMP:{dt.datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')}",
             f"DTSTART;TZID=America/Lima:{f(ini)}",
             f"DTEND;TZID=America/Lima:{f(fin)}",
-            f"RRULE:FREQ=WEEKLY;BYDAY={DIAS_ICS[dia]}",
+            f"RRULE:FREQ=WEEKLY;BYDAY={DIAS_ICS[dia]}" if freq == "WEEKLY" else "RRULE:FREQ=DAILY",
             f"SUMMARY:{titulo}",
             f"DESCRIPTION:{desc}",
             "BEGIN:VALARM",
@@ -64,17 +65,17 @@ def _evento(uid, dia, hora, minuto, dur, titulo, desc, aviso_min):
 
 def generar_ics(datos: dict) -> str:
     p = plan(datos)
-    ev = []
-    for i, d in enumerate(p["dias"]):
-        grabar = (d - 1) % 7
-        ev.append(_evento(f"grabar-{i}", grabar, 19, 0, 45, "🎙️ Grabar el audio del próximo video",
-                          f"Mañana publicas ({DIAS_ES[d]}). Graba con el guion en Notas de voz y pásalo a la carpeta del video.", 0))
-        ev.append(_evento(f"publicar-{i}", d, p["hora"], 0, 30, "🚀 Publicar en YouTube + TikTok",
-                          f"Tu mejor momento según tus datos: {DIAS_ES[d]} por la {p['franja']}. Revisa el video y dile a Claude 'sí, publica'.", 15))
-    ev.append(_evento("tema", 6, 18, 0, 30, "📝 Elegir tema y pedir el guion a Claude",
-                      "Abre Delga Panel → Plan → Banco de ideas. Elige el tema y pide el guion.", 0))
-    ev.append(_evento("revisar", 0, 9, 0, 15, "📊 Revisar Delga Panel",
-                      "Mira qué video despegó, tu racha y los consejos de la semana.", 0))
+    dest = ", ".join(DIAS_ES[d] for d in p.get("destacados", []))
+    ev = [
+        _evento("grabar-diario", 0, 19, 0, 45, "🎙️ Grabar el audio del video de mañana",
+                "1 video diario. Graba con el guion en Notas de voz y pásalo a la carpeta del video.", 0, "DAILY"),
+        _evento("publicar-diario", 0, p["hora"], 0, 30, "🚀 Publicar el video del día (YouTube + TikTok)",
+                f"Tu mejor franja: {p['franja']}. Días que mejor rinden: {dest}. Revisa el video y dile a Claude 'sí, publica'.", 15, "DAILY"),
+        _evento("tema", 6, 17, 0, 45, "📝 Planificar la semana: 7 temas y guiones",
+                "Abre Delga Panel → Plan → Banco de ideas. Elige 7 temas y pide los guiones a Claude.", 0),
+        _evento("revisar", 0, 9, 0, 15, "📊 Revisar Delga Panel",
+                "Mira qué video despegó, tu racha y los consejos de la semana.", 0),
+    ]
     cab = [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",

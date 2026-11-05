@@ -297,7 +297,7 @@ function vConsejos() {
   const top = [...vids].sort((a, b) => b.vistas - a.vistas)[0];
   h += `<div class="card hero"><h3>🧭 Tu plan para esta semana</h3>
     <div style="display:grid;gap:8px;font-size:14px">
-      <div>1️⃣ Publica <b>3–4 Shorts</b> repartidos en la semana.</div>
+      <div>1️⃣ Publica <b>1 video al día</b> en YouTube y TikTok (7 por semana). La constancia es lo que más premia el algoritmo.</div>
       ${top ? `<div>2️⃣ Repite la fórmula de <b>«${esc(top.titulo.slice(0, 50))}»</b> (${fmt(top.vistas)} vistas): mismo tipo de gancho y tema.</div>` : ''}
       <div>3️⃣ Gancho en el <b>primer segundo</b> y cierre con una pregunta para comentarios.</div>
       <div>4️⃣ Sube a <b>YouTube y TikTok</b> el mismo día y compara aquí cuál rinde más.</div>

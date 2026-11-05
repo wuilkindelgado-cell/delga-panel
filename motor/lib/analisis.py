@@ -65,8 +65,8 @@ def recomendaciones(canales: list[dict]) -> list[dict]:
         if not r.get("n"):
             add(c, 1, "Aún no hay videos públicos: publica el primero para empezar a medir.")
             continue
-        if r["dias_sin_publicar"] >= 4:
-            add(c, 1, f"Llevas {r['dias_sin_publicar']} días sin publicar. El algoritmo premia la constancia: apunta a 3–4 Shorts por semana.")
+        if r["dias_sin_publicar"] >= 2:
+            add(c, 1, f"Llevas {r['dias_sin_publicar']} días sin publicar. El algoritmo premia la constancia: tu meta es 1 video diario.")
         m = r["mejor"]
         add(c, 2, f"Tu mejor video es «{m['titulo'][:60]}» con {_n(m['vistas'])} vistas. Haz otro con el mismo tipo de gancho/tema.")
         mo = c.get("momento", {})

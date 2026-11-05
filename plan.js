@@ -8,21 +8,24 @@ const claveSemana = (d = new Date()) => { const l = lunesDe(d); return `${l.getF
 const leerJSON = (k, def) => { try { return JSON.parse(leer(k) || 'null') ?? def; } catch (e) { return def; } };
 
 function tareasSemana() {
-  const p = D.plan || {dias: [1, 3], hora: 15, franja: 'tarde'};
-  const t = [{id: 'tema', dia: 6, h: '18:00', txt: '📝 Elegir tema y pedir el guion a Claude'}, {id: 'revisar', dia: 0, h: '09:00', txt: '📊 Revisar Delga Panel'}];
-  p.dias.forEach((d, i) => {
-    t.push({id: 'grabar' + i, dia: (d + 6) % 7, h: '19:00', txt: `🎙️ Grabar audio (publicas el ${DIAS_N[d]})`});
-    t.push({id: 'publicar' + i, dia: d, h: `${String(p.hora).padStart(2, '0')}:00`, txt: '🚀 Publicar en YouTube + TikTok'});
-  });
-  return t.sort((a, b) => a.dia - b.dia || a.h.localeCompare(b.h));
+  const p = D.plan || {dias: [0, 1, 2, 3, 4, 5, 6], destacados: [3, 6], hora: 15};
+  const hoy = (new Date().getDay() + 6) % 7, hora = `${String(p.hora).padStart(2, '0')}:00`;
+  const t = [];
+  if (hoy === 0) t.push({id: 'revisar', dia: 0, h: '09:00', txt: '📊 Revisar Delga Panel'});
+  for (let d = hoy; d < 7; d++) {
+    t.push({id: 'publicar' + d, dia: d, h: hora, txt: `🚀 Publicar el video del día${(p.destacados || []).includes(d) ? ' ⭐ día fuerte' : ''}`});
+    t.push({id: 'grabar' + d, dia: d, h: '19:00', txt: '🎙️ Grabar el audio del video de mañana'});
+  }
+  t.push({id: 'tema', dia: 6, h: '17:00', txt: '📝 Planificar la semana: 7 temas y guiones'});
+  return t.sort((x, y) => x.dia - y.dia || x.h.localeCompare(y.h));
 }
 
 function vPlan() {
-  const p = D.plan || {dias: [1, 3], hora: 15, franja: 'tarde'};
+  const p = D.plan || {dias: [0, 1, 2, 3, 4, 5, 6], destacados: [3, 6], hora: 15, franja: 'tarde'};
   const vids = D.ok.flatMap((c) => c.videos).filter((v) => (v.privacidad || 'public') === 'public');
   const lunes = lunesDe(new Date()), hoyIdx = (new Date().getDay() + 6) % 7;
   const deEstaSemana = vids.filter((v) => new Date(v.publicado) >= lunes);
-  const metaSem = Number(leer('dp-meta-semana') || 3);
+  const metaSem = Number(leer('dp-meta-semana2') || 7);
   const pubYT = deEstaSemana.filter((v) => v.canal.plataforma === 'youtube').length, pubTT = deEstaSemana.length - pubYT;
   const diasPub = new Set(deEstaSemana.map((v) => new Date(v.publicado).toDateString())).size;
   // racha de semanas seguidas publicando
@@ -35,7 +38,7 @@ function vPlan() {
   for (let i = 0; i < 7; i++) {
     const dia = new Date(lunes); dia.setDate(dia.getDate() + i);
     const pub = deEstaSemana.some((v) => new Date(v.publicado).toDateString() === dia.toDateString());
-    sem += `<div class="${i === hoyIdx ? 'hoy ' : ''}${pub ? 'pub' : p.dias.includes(i) ? 'plan' : ''}">${DIAS_L[i]}<b>${dia.getDate()}</b>${pub ? '✓' : p.dias.includes(i) ? '🚀' : '·'}</div>`;
+    sem += `<div class="${i === hoyIdx ? 'hoy ' : ''}${pub ? 'pub' : i >= hoyIdx ? 'plan' : ''}">${DIAS_L[i]}<b>${dia.getDate()}</b>${pub ? '✓' : i < hoyIdx ? '✗' : (p.destacados || []).includes(i) ? '⭐' : '🎬'}</div>`;
   }
   let h = `<div class="card hero"><h3>🗓 Esta semana <small>${pubYT} en YouTube · ${pubTT} en TikTok</small></h3>
     <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px">
@@ -44,13 +47,13 @@ function vPlan() {
     </div>
     <div class="progreso"><i style="width:${Math.min(100, (diasPub / metaSem) * 100)}%"></i></div>
     <div class="semana">${sem}</div>
-    <div class="chips" style="margin:10px 0 0">${[2, 3, 4, 5].map((n) => `<button class="chip ${metaSem === n ? 'on' : ''}" data-meta-semana="${n}">Meta ${n}/sem</button>`).join('')}</div>
+    <div class="chips" style="margin:10px 0 0">${[3, 5, 7, 10, 14].map((n) => `<button class="chip ${metaSem === n ? 'on' : ''}" data-meta-semana="${n}">Meta ${n}/sem</button>`).join('')}</div>
   </div>`;
   const hechas = leerJSON('dp-tareas-' + claveSemana(), {});
-  h += `<div class="card"><h3>✅ Tareas de la semana <small>publica ${DIAS_N[p.dias[0]]} y ${DIAS_N[p.dias[1]]} · ${p.hora}:00</small></h3>${tareasSemana().map((t) => `<button class="tarea ${hechas[t.id] ? 'hecha' : ''}" data-tarea="${t.id}"><span class="check">${hechas[t.id] ? '✓' : ''}</span><span style="flex:1"><span class="tt">${t.txt}</span><div style="color:var(--suave);font-size:12px;margin-top:2px">${DIAS_N[t.dia]} · ${t.h}${t.dia === hoyIdx ? ' · <b style="color:var(--cian)">hoy</b>' : ''}</div></span></button>`).join('')}</div>`;
+  h += `<div class="card"><h3>✅ Tareas de la semana <small>1 video al día · ${p.hora}:00 · ⭐ ${(p.destacados || []).map((d) => DIAS_N[d]).join(' y ')}</small></h3>${tareasSemana().map((t) => `<button class="tarea ${hechas[t.id] ? 'hecha' : ''}" data-tarea="${t.id}"><span class="check">${hechas[t.id] ? '✓' : ''}</span><span style="flex:1"><span class="tt">${t.txt}</span><div style="color:var(--suave);font-size:12px;margin-top:2px">${DIAS_N[t.dia]} · ${t.h}${t.dia === hoyIdx ? ' · <b style="color:var(--cian)">hoy</b>' : ''}</div></span></button>`).join('')}</div>`;
   const base = location.host + location.pathname.replace(/[^/]*$/, '');
   h += `<div class="card"><h3>⏰ Recordatorios en tu iPhone</h3>
-    <div style="color:var(--suave);font-size:13px;margin-bottom:12px">Se suscribe al Calendario del iPhone y te avisa con notificación aunque la app esté cerrada. Las fechas se ajustan solas a tu mejor día y hora.</div>
+    <div style="color:var(--suave);font-size:13px;margin-bottom:12px">Se suscribe al Calendario del iPhone y te avisa con notificación aunque la app esté cerrada. Plan de 1 video diario: aviso para publicar cada día a tu mejor hora y para grabar el de mañana a las 19:00.</div>
     <a class="btn" style="width:100%" href="webcal://${esc(base)}recordatorios.ics">📅 Añadir a mi Calendario</a>
     <div style="color:var(--tenue);font-size:12px;margin-top:10px">Si no se abre: Ajustes → Calendario → Cuentas → Añadir cuenta → Otra → Añadir calendario suscrito → pega <span style="-webkit-user-select:text;user-select:text;color:var(--suave)">https://${esc(base)}recordatorios.ics</span></div></div>`;
   const ideas = leerJSON('dp-ideas', []);
@@ -142,7 +145,7 @@ document.addEventListener('click', (e) => {
     o[t.dataset.tarea] = !o[t.dataset.tarea]; guardar(k, JSON.stringify(o));
     if (o[t.dataset.tarea]) toast('✓ ¡Bien hecho!');
   }
-  if (t.dataset.metaSemana) guardar('dp-meta-semana', t.dataset.metaSemana);
+  if (t.dataset.metaSemana) guardar('dp-meta-semana2', t.dataset.metaSemana);
   const ideas = leerJSON('dp-ideas', []);
   if (t.id === 'addIdea') {
     const v = $('#nuevaIdea').value.trim();
