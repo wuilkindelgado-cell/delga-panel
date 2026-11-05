@@ -22,6 +22,7 @@ jobs:
           DELGA_ESTADO_CLAVE: ${{ secrets.DELGA_ESTADO_CLAVE }}
           DELGA_SECRETOS: ${{ runner.temp }}/secretos
           DELGA_DATOS: ${{ runner.temp }}/datos
+          TZ: America/Lima
         run: python motor/delga.py nube-ciclo
       - name: Guardar
         run: |
