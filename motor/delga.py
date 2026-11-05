@@ -148,6 +148,44 @@ def cmd_panel(a):
         print("Panel publicado:", publicar.publicar(), "\nClave:", clave_panel())
 
 
+def cmd_programar_semana(a):
+    """Domingo: programa los 7 videos de la semana. YouTube automático; TikTok → lista para TikTok Studio."""
+    import datetime as dt
+    import json
+
+    from lib.calendario import DIAS_ES, fechas_semana
+
+    ruta = Path(a.semana)
+    sem = json.loads(ruta.read_text(encoding="utf-8"))
+    items = sem["videos"]
+    datos = leer_json(DATOS / "metricas.json") or {"canales": []}
+    desde = dt.date.fromisoformat(a.desde) if a.desde else None
+    fechas = fechas_semana(datos, desde)
+    if len(items) > 7:
+        raise SystemExit("Máximo 7 videos por semana (uno por día).")
+    base = ruta.parent
+    lineas = [f"# Programación de la semana del {fechas[0]:%d/%m} al {fechas[-1]:%d/%m}", "",
+              "| Día | Hora | Canal | Título | YouTube |", "|---|---|---|---|---|"]
+    tiktok = ["", "## TikTok Studio (programar a mano: tiktok.com/tiktokstudio → Subir → Programar)", ""]
+    for i, it in enumerate(items):
+        f = fechas[i]
+        canal_yt = canal(f"yt-{it['canal']}")
+        desc = (base / it["descripcion_archivo"]).read_text(encoding="utf-8") if it.get("descripcion_archivo") else it.get("descripcion", "")
+        etiquetas = [e.strip() for e in it.get("etiquetas", "").split(",") if e.strip()]
+        enlace = "(simulación)"
+        if not a.simular:
+            vid = youtube.subir(canal_yt, str(base / it["video"]), it["titulo"], desc, etiquetas, "private",
+                                str(base / it["miniatura"]) if it.get("miniatura") else None, publicar_en=f.isoformat())
+            enlace = f"https://youtube.com/shorts/{vid}"
+            print(f"✔ {DIAS_ES[f.weekday()]} {f:%d/%m %H:%M} · YouTube {it['canal']}: {enlace}")
+        lineas.append(f"| {DIAS_ES[f.weekday()]} {f:%d/%m} | {f:%H:%M} | {it['canal']} | {it['titulo']} | {enlace} |")
+        tiktok += [f"### {DIAS_ES[f.weekday()].capitalize()} {f:%d/%m} a las {f:%H:%M} · TikTok {it['canal']}",
+                   f"- Video: `{it['video']}`", "- Texto para copiar:", "```", it.get("tiktok_texto") or desc, "```", ""]
+    salida = base / "programacion.md"
+    salida.write_text("\n".join(lineas + tiktok), encoding="utf-8")
+    print(f"\n{'Simulación' if a.simular else 'Semana programada'}: {salida}")
+
+
 def cmd_nube(a):
     """Activa/actualiza la actualización automática en GitHub Actions."""
     from lib import nube
@@ -203,6 +241,7 @@ def main():
     x.add_argument("--etiquetas"); x.add_argument("--privacidad", default="private"); x.add_argument("--miniatura")
     x.set_defaults(f=cmd_subir)
     x = s.add_parser("panel"); x.add_argument("accion", choices=["publicar", "clave", "url"]); x.set_defaults(f=cmd_panel)
+    x = s.add_parser("programar-semana"); x.add_argument("semana", help="semana.json con los 7 videos"); x.add_argument("--desde"); x.add_argument("--simular", action="store_true"); x.set_defaults(f=cmd_programar_semana)
     s.add_parser("nube").set_defaults(f=cmd_nube)
     s.add_parser("nube-ciclo").set_defaults(f=cmd_nube_ciclo)
     x = s.add_parser("programar"); x.add_argument("--horas", type=int, default=3); x.set_defaults(f=cmd_programar)

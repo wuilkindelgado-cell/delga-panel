@@ -235,7 +235,8 @@ def poner_miniatura(c: dict, video_id: str, imagen: str) -> None:
     _yt(c).thumbnails().set(videoId=video_id, media_body=MediaFileUpload(imagen)).execute()
 
 
-def subir(c: dict, video: str, titulo: str, descripcion: str = "", etiquetas=None, privacidad="private", miniatura=None, categoria=None) -> str:
+def subir(c: dict, video: str, titulo: str, descripcion: str = "", etiquetas=None, privacidad="private", miniatura=None, categoria=None, publicar_en: str | None = None) -> str:
+    """publicar_en: fecha ISO 8601 (con zona). Si se da, el video queda privado y YouTube lo publica solo a esa hora."""
     yt = _yt(c)
     cuerpo = {
         "snippet": {
@@ -248,6 +249,8 @@ def subir(c: dict, video: str, titulo: str, descripcion: str = "", etiquetas=Non
         },
         "status": {"privacyStatus": privacidad, "selfDeclaredMadeForKids": False},
     }
+    if publicar_en:
+        cuerpo["status"].update(privacyStatus="private", publishAt=publicar_en)
     req = yt.videos().insert(part="snippet,status", body=cuerpo, media_body=MediaFileUpload(video, chunksize=8 * 1024 * 1024, resumable=True))
     resp = None
     while resp is None:

@@ -7,17 +7,20 @@ const lunesDe = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDat
 const claveSemana = (d = new Date()) => { const l = lunesDe(d); return `${l.getFullYear()}-${l.getMonth() + 1}-${l.getDate()}`; };
 const leerJSON = (k, def) => { try { return JSON.parse(leer(k) || 'null') ?? def; } catch (e) { return def; } };
 
+const horaDe = (p, d) => (p.horarios && p.horarios[d] != null ? p.horarios[d] : p.hora || 15);
 function tareasSemana() {
-  const p = D.plan || {dias: [0, 1, 2, 3, 4, 5, 6], destacados: [3, 6], hora: 15};
-  const hoy = (new Date().getDay() + 6) % 7, hora = `${String(p.hora).padStart(2, '0')}:00`;
+  const p = D.plan || {};
+  const hoy = (new Date().getDay() + 6) % 7, hh = (d) => `${String(horaDe(p, d)).padStart(2, '0')}:00`;
   const t = [];
-  if (hoy === 0) t.push({id: 'revisar', dia: 0, h: '09:00', txt: '📊 Revisar Delga Panel'});
   for (let d = hoy; d < 7; d++) {
-    t.push({id: 'publicar' + d, dia: d, h: hora, txt: `🚀 Publicar el video del día${(p.destacados || []).includes(d) ? ' ⭐ día fuerte' : ''}`});
-    t.push({id: 'grabar' + d, dia: d, h: '19:00', txt: '🎙️ Grabar el audio del video de mañana'});
+    const prueba = p.origen && p.origen[d] === 'prueba';
+    t.push({id: 'sale' + d, dia: d, h: hh(d), txt: `🚀 Sale el video · responde comentarios 1 h${prueba ? ' · 🧪 hora de prueba' : ''}`});
   }
-  t.push({id: 'tema', dia: 6, h: '17:00', txt: '📝 Planificar la semana: 7 temas y guiones'});
-  return t.sort((x, y) => x.dia - y.dia || x.h.localeCompare(y.h));
+  t.push({id: 'sab-temas', dia: 5, h: '18:00', txt: '📝 Elegir los 7 temas y pedir los guiones'});
+  t.push({id: 'dom-grabar', dia: 6, h: '10:00', txt: '🎙️ Grabar los 7 audios'});
+  t.push({id: 'dom-aprobar', dia: 6, h: '16:00', txt: '✅ Revisar y aprobar los 7 videos'});
+  t.push({id: 'dom-tiktok', dia: 6, h: '18:00', txt: '📅 Programar los 7 TikToks (YouTube lo programa Claude)'});
+  return t.filter((x) => x.dia >= hoy).sort((x, y) => x.dia - y.dia || x.h.localeCompare(y.h));
 }
 
 function vPlan() {
@@ -38,7 +41,7 @@ function vPlan() {
   for (let i = 0; i < 7; i++) {
     const dia = new Date(lunes); dia.setDate(dia.getDate() + i);
     const pub = deEstaSemana.some((v) => new Date(v.publicado).toDateString() === dia.toDateString());
-    sem += `<div class="${i === hoyIdx ? 'hoy ' : ''}${pub ? 'pub' : i >= hoyIdx ? 'plan' : ''}">${DIAS_L[i]}<b>${dia.getDate()}</b>${pub ? '✓' : i < hoyIdx ? '✗' : (p.destacados || []).includes(i) ? '⭐' : '🎬'}</div>`;
+    sem += `<div class="${i === hoyIdx ? 'hoy ' : ''}${pub ? 'pub' : i >= hoyIdx ? 'plan' : ''}">${DIAS_L[i]}<b>${dia.getDate()}</b>${pub ? '✓' : i < hoyIdx ? '✗' : horaDe(p, i) + 'h'}</div>`;
   }
   let h = `<div class="card hero"><h3>🗓 Esta semana <small>${pubYT} en YouTube · ${pubTT} en TikTok</small></h3>
     <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px">
@@ -49,11 +52,12 @@ function vPlan() {
     <div class="semana">${sem}</div>
     <div class="chips" style="margin:10px 0 0">${[3, 5, 7, 10, 14].map((n) => `<button class="chip ${metaSem === n ? 'on' : ''}" data-meta-semana="${n}">Meta ${n}/sem</button>`).join('')}</div>
   </div>`;
+  h += `<div class="card"><h3>⏰ Horarios de publicación <small>se ajustan con tus datos</small></h3>${DIAS_N.map((n, d) => `<div class="tarea" style="padding:8px 0"><span style="flex:1;text-transform:capitalize">${n}</span><b class="num">${String(horaDe(p, d)).padStart(2, '0')}:00</b><span class="tag ${p.origen && p.origen[d] === 'datos' ? 'arriba' : 'nuevo'}" style="margin-left:8px">${p.origen && p.origen[d] === 'datos' ? '📊 por datos' : '🧪 probando'}</span></div>`).join('')}<div class="leyenda">🧪 = aún pocos datos ese día: cada semana se prueba otra hora para descubrir la mejor.</div></div>`;
   const hechas = leerJSON('dp-tareas-' + claveSemana(), {});
-  h += `<div class="card"><h3>✅ Tareas de la semana <small>1 video al día · ${p.hora}:00 · ⭐ ${(p.destacados || []).map((d) => DIAS_N[d]).join(' y ')}</small></h3>${tareasSemana().map((t) => `<button class="tarea ${hechas[t.id] ? 'hecha' : ''}" data-tarea="${t.id}"><span class="check">${hechas[t.id] ? '✓' : ''}</span><span style="flex:1"><span class="tt">${t.txt}</span><div style="color:var(--suave);font-size:12px;margin-top:2px">${DIAS_N[t.dia]} · ${t.h}${t.dia === hoyIdx ? ' · <b style="color:var(--cian)">hoy</b>' : ''}</div></span></button>`).join('')}</div>`;
+  h += `<div class="card"><h3>✅ Tareas de la semana <small>sábado temas · domingo producción · 1 video al día</small></h3>${tareasSemana().map((t) => `<button class="tarea ${hechas[t.id] ? 'hecha' : ''}" data-tarea="${t.id}"><span class="check">${hechas[t.id] ? '✓' : ''}</span><span style="flex:1"><span class="tt">${t.txt}</span><div style="color:var(--suave);font-size:12px;margin-top:2px">${DIAS_N[t.dia]} · ${t.h}${t.dia === hoyIdx ? ' · <b style="color:var(--cian)">hoy</b>' : ''}</div></span></button>`).join('')}</div>`;
   const base = location.host + location.pathname.replace(/[^/]*$/, '');
   h += `<div class="card"><h3>⏰ Recordatorios en tu iPhone</h3>
-    <div style="color:var(--suave);font-size:13px;margin-bottom:12px">Se suscribe al Calendario del iPhone y te avisa con notificación aunque la app esté cerrada. Plan de 1 video diario: aviso para publicar cada día a tu mejor hora y para grabar el de mañana a las 19:00.</div>
+    <div style="color:var(--suave);font-size:13px;margin-bottom:12px">Se suscribe al Calendario del iPhone y te avisa con notificación aunque la app esté cerrada. Producción en bloque: sábado temas, domingo grabas y programamos los 7, y cada día te avisa cuando sale el video para responder comentarios.</div>
     <a class="btn" style="width:100%" href="webcal://${esc(base)}recordatorios.ics">📅 Añadir a mi Calendario</a>
     <div style="color:var(--tenue);font-size:12px;margin-top:10px">Si no se abre: Ajustes → Calendario → Cuentas → Añadir cuenta → Otra → Añadir calendario suscrito → pega <span style="-webkit-user-select:text;user-select:text;color:var(--suave)">https://${esc(base)}recordatorios.ics</span></div></div>`;
   const ideas = leerJSON('dp-ideas', []);
