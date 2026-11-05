@@ -3,7 +3,7 @@ VERSION:2.0
 PRODID:-//Delga Panel//Recordatorios//ES
 CALSCALE:GREGORIAN
 METHOD:PUBLISH
-X-WR-CALNAME:Delga · Grabar y publicar
+X-WR-CALNAME:Delga · Producción semanal
 X-WR-TIMEZONE:America/Lima
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
@@ -17,58 +17,170 @@ TZNAME:-05
 END:STANDARD
 END:VTIMEZONE
 BEGIN:VEVENT
-UID:grabar-diario@delga-panel
-DTSTAMP:20261105T043419Z
-DTSTART;TZID=America/Lima:20261104T190000
-DTEND;TZID=America/Lima:20261104T194500
-RRULE:FREQ=DAILY
-SUMMARY:🎙️ Grabar el audio del video de mañana
-DESCRIPTION:1 video diario. Graba con el guion en Notas de voz y pásalo a la carpeta del video.
+UID:sab-temas@delga-panel
+DTSTAMP:20261105T044042Z
+DTSTART;TZID=America/Lima:20261107T180000
+DTEND;TZID=America/Lima:20261107T190000
+RRULE:FREQ=WEEKLY;BYDAY=SA
+SUMMARY:📝 Elegir los 7 temas y pedir los guiones a Claude
+DESCRIPTION:Abre Delga Panel → Plan → Banco de ideas. Elige 7 temas (Delgatronics / Delgafutbol) y pide los 7 guiones.
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:🎙️ Grabar el audio del video de mañana
+DESCRIPTION:📝 Elegir los 7 temas y pedir los guiones a Claude
 TRIGGER:-PT0M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:publicar-diario@delga-panel
-DTSTAMP:20261105T043419Z
-DTSTART;TZID=America/Lima:20261104T150000
-DTEND;TZID=America/Lima:20261104T153000
-RRULE:FREQ=DAILY
-SUMMARY:🚀 Publicar el video del día (YouTube + TikTok)
-DESCRIPTION:Tu mejor franja: tarde. Días que mejor rinden: jueves, domingo. Revisa el video y dile a Claude 'sí, publica'.
+UID:dom-grabar@delga-panel
+DTSTAMP:20261105T044042Z
+DTSTART;TZID=America/Lima:20261108T100000
+DTEND;TZID=America/Lima:20261108T120000
+RRULE:FREQ=WEEKLY;BYDAY=SU
+SUMMARY:🎙️ Domingo de producción: grabar los 7 audios
+DESCRIPTION:Graba los 7 guiones en Notas de voz (uno por archivo) y pásalos a sus carpetas. Claude hace los 7 videos.
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:🚀 Publicar el video del día (YouTube + TikTok)
+DESCRIPTION:🎙️ Domingo de producción: grabar los 7 audios
 TRIGGER:-PT15M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:tema@delga-panel
-DTSTAMP:20261105T043419Z
-DTSTART;TZID=America/Lima:20261108T170000
-DTEND;TZID=America/Lima:20261108T174500
+UID:dom-aprobar@delga-panel
+DTSTAMP:20261105T044042Z
+DTSTART;TZID=America/Lima:20261108T160000
+DTEND;TZID=America/Lima:20261108T170000
 RRULE:FREQ=WEEKLY;BYDAY=SU
-SUMMARY:📝 Planificar la semana: 7 temas y guiones
-DESCRIPTION:Abre Delga Panel → Plan → Banco de ideas. Elige 7 temas y pide los guiones a Claude.
+SUMMARY:✅ Revisar y aprobar los 7 videos
+DESCRIPTION:Mira los 7 videos y miniaturas. Dile a Claude 'sí, programa la semana'.
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:📝 Planificar la semana: 7 temas y guiones
+DESCRIPTION:✅ Revisar y aprobar los 7 videos
 TRIGGER:-PT0M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:revisar@delga-panel
-DTSTAMP:20261105T043419Z
+UID:dom-tiktok@delga-panel
+DTSTAMP:20261105T044042Z
+DTSTART;TZID=America/Lima:20261108T180000
+DTEND;TZID=America/Lima:20261108T183000
+RRULE:FREQ=WEEKLY;BYDAY=SU
+SUMMARY:📅 Programar los 7 TikToks en TikTok Studio
+DESCRIPTION:YouTube ya queda programado por Claude. Abre tiktok.com/tiktokstudio y programa los 7 con las horas y textos de la lista.
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:📅 Programar los 7 TikToks en TikTok Studio
+TRIGGER:-PT0M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:lun-panel@delga-panel
+DTSTAMP:20261105T044042Z
 DTSTART;TZID=America/Lima:20261109T090000
 DTEND;TZID=America/Lima:20261109T091500
 RRULE:FREQ=WEEKLY;BYDAY=MO
-SUMMARY:📊 Revisar Delga Panel
-DESCRIPTION:Mira qué video despegó, tu racha y los consejos de la semana.
+SUMMARY:📊 Revisar Delga Panel: ¿qué funcionó la semana pasada?
+DESCRIPTION:Mira qué video despegó y qué hora rindió más. El plan de horarios se ajusta solo.
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:📊 Revisar Delga Panel
+DESCRIPTION:📊 Revisar Delga Panel: ¿qué funcionó la semana pasada?
+TRIGGER:-PT0M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:sale-0@delga-panel
+DTSTAMP:20261105T044042Z
+DTSTART;TZID=America/Lima:20261109T210000
+DTEND;TZID=America/Lima:20261109T220000
+RRULE:FREQ=WEEKLY;BYDAY=MO
+SUMMARY:🚀 Sale el video de hoy: responde comentarios 1 hora
+DESCRIPTION:Responder en la primera hora empuja el video en el algoritmo de YouTube y TikTok.
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:🚀 Sale el video de hoy: responde comentarios 1 hora
+TRIGGER:-PT0M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:sale-1@delga-panel
+DTSTAMP:20261105T044042Z
+DTSTART;TZID=America/Lima:20261110T190000
+DTEND;TZID=America/Lima:20261110T200000
+RRULE:FREQ=WEEKLY;BYDAY=TU
+SUMMARY:🚀 Sale el video de hoy: responde comentarios 1 hora
+DESCRIPTION:Responder en la primera hora empuja el video en el algoritmo de YouTube y TikTok.
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:🚀 Sale el video de hoy: responde comentarios 1 hora
+TRIGGER:-PT0M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:sale-2@delga-panel
+DTSTAMP:20261105T044042Z
+DTSTART;TZID=America/Lima:20261104T210000
+DTEND;TZID=America/Lima:20261104T220000
+RRULE:FREQ=WEEKLY;BYDAY=WE
+SUMMARY:🚀 Sale el video de hoy: responde comentarios 1 hora
+DESCRIPTION:Responder en la primera hora empuja el video en el algoritmo de YouTube y TikTok.
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:🚀 Sale el video de hoy: responde comentarios 1 hora
+TRIGGER:-PT0M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:sale-3@delga-panel
+DTSTAMP:20261105T044042Z
+DTSTART;TZID=America/Lima:20261105T120000
+DTEND;TZID=America/Lima:20261105T130000
+RRULE:FREQ=WEEKLY;BYDAY=TH
+SUMMARY:🚀 Sale el video de hoy: responde comentarios 1 hora
+DESCRIPTION:Responder en la primera hora empuja el video en el algoritmo de YouTube y TikTok.
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:🚀 Sale el video de hoy: responde comentarios 1 hora
+TRIGGER:-PT0M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:sale-4@delga-panel
+DTSTAMP:20261105T044042Z
+DTSTART;TZID=America/Lima:20261106T120000
+DTEND;TZID=America/Lima:20261106T130000
+RRULE:FREQ=WEEKLY;BYDAY=FR
+SUMMARY:🚀 Sale el video de hoy: responde comentarios 1 hora
+DESCRIPTION:Responder en la primera hora empuja el video en el algoritmo de YouTube y TikTok.
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:🚀 Sale el video de hoy: responde comentarios 1 hora
+TRIGGER:-PT0M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:sale-5@delga-panel
+DTSTAMP:20261105T044042Z
+DTSTART;TZID=America/Lima:20261107T150000
+DTEND;TZID=America/Lima:20261107T160000
+RRULE:FREQ=WEEKLY;BYDAY=SA
+SUMMARY:🚀 Sale el video de hoy: responde comentarios 1 hora
+DESCRIPTION:Responder en la primera hora empuja el video en el algoritmo de YouTube y TikTok.
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:🚀 Sale el video de hoy: responde comentarios 1 hora
+TRIGGER:-PT0M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:sale-6@delga-panel
+DTSTAMP:20261105T044042Z
+DTSTART;TZID=America/Lima:20261108T150000
+DTEND;TZID=America/Lima:20261108T160000
+RRULE:FREQ=WEEKLY;BYDAY=SU
+SUMMARY:🚀 Sale el video de hoy: responde comentarios 1 hora
+DESCRIPTION:Responder en la primera hora empuja el video en el algoritmo de YouTube y TikTok.
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:🚀 Sale el video de hoy: responde comentarios 1 hora
 TRIGGER:-PT0M
 END:VALARM
 END:VEVENT
