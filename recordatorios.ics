@@ -17,78 +17,50 @@ TZNAME:-05
 END:STANDARD
 END:VTIMEZONE
 BEGIN:VEVENT
-UID:grabar-0@delga-panel
-DTSTAMP:20261105T042806Z
+UID:grabar-diario@delga-panel
+DTSTAMP:20261105T043419Z
 DTSTART;TZID=America/Lima:20261104T190000
 DTEND;TZID=America/Lima:20261104T194500
-RRULE:FREQ=WEEKLY;BYDAY=WE
-SUMMARY:🎙️ Grabar el audio del próximo video
-DESCRIPTION:Mañana publicas (jueves). Graba con el guion en Notas de voz y pásalo a la carpeta del video.
+RRULE:FREQ=DAILY
+SUMMARY:🎙️ Grabar el audio del video de mañana
+DESCRIPTION:1 video diario. Graba con el guion en Notas de voz y pásalo a la carpeta del video.
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:🎙️ Grabar el audio del próximo video
+DESCRIPTION:🎙️ Grabar el audio del video de mañana
 TRIGGER:-PT0M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:publicar-0@delga-panel
-DTSTAMP:20261105T042806Z
-DTSTART;TZID=America/Lima:20261105T150000
-DTEND;TZID=America/Lima:20261105T153000
-RRULE:FREQ=WEEKLY;BYDAY=TH
-SUMMARY:🚀 Publicar en YouTube + TikTok
-DESCRIPTION:Tu mejor momento según tus datos: jueves por la tarde. Revisa el video y dile a Claude 'sí, publica'.
+UID:publicar-diario@delga-panel
+DTSTAMP:20261105T043419Z
+DTSTART;TZID=America/Lima:20261104T150000
+DTEND;TZID=America/Lima:20261104T153000
+RRULE:FREQ=DAILY
+SUMMARY:🚀 Publicar el video del día (YouTube + TikTok)
+DESCRIPTION:Tu mejor franja: tarde. Días que mejor rinden: jueves, domingo. Revisa el video y dile a Claude 'sí, publica'.
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:🚀 Publicar en YouTube + TikTok
-TRIGGER:-PT15M
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:grabar-1@delga-panel
-DTSTAMP:20261105T042806Z
-DTSTART;TZID=America/Lima:20261107T190000
-DTEND;TZID=America/Lima:20261107T194500
-RRULE:FREQ=WEEKLY;BYDAY=SA
-SUMMARY:🎙️ Grabar el audio del próximo video
-DESCRIPTION:Mañana publicas (domingo). Graba con el guion en Notas de voz y pásalo a la carpeta del video.
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:🎙️ Grabar el audio del próximo video
-TRIGGER:-PT0M
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:publicar-1@delga-panel
-DTSTAMP:20261105T042806Z
-DTSTART;TZID=America/Lima:20261108T150000
-DTEND;TZID=America/Lima:20261108T153000
-RRULE:FREQ=WEEKLY;BYDAY=SU
-SUMMARY:🚀 Publicar en YouTube + TikTok
-DESCRIPTION:Tu mejor momento según tus datos: domingo por la tarde. Revisa el video y dile a Claude 'sí, publica'.
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:🚀 Publicar en YouTube + TikTok
+DESCRIPTION:🚀 Publicar el video del día (YouTube + TikTok)
 TRIGGER:-PT15M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:tema@delga-panel
-DTSTAMP:20261105T042806Z
-DTSTART;TZID=America/Lima:20261108T180000
-DTEND;TZID=America/Lima:20261108T183000
+DTSTAMP:20261105T043419Z
+DTSTART;TZID=America/Lima:20261108T170000
+DTEND;TZID=America/Lima:20261108T174500
 RRULE:FREQ=WEEKLY;BYDAY=SU
-SUMMARY:📝 Elegir tema y pedir el guion a Claude
-DESCRIPTION:Abre Delga Panel → Plan → Banco de ideas. Elige el tema y pide el guion.
+SUMMARY:📝 Planificar la semana: 7 temas y guiones
+DESCRIPTION:Abre Delga Panel → Plan → Banco de ideas. Elige 7 temas y pide los guiones a Claude.
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:📝 Elegir tema y pedir el guion a Claude
+DESCRIPTION:📝 Planificar la semana: 7 temas y guiones
 TRIGGER:-PT0M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:revisar@delga-panel
-DTSTAMP:20261105T042806Z
+DTSTAMP:20261105T043419Z
 DTSTART;TZID=America/Lima:20261109T090000
 DTEND;TZID=America/Lima:20261109T091500
 RRULE:FREQ=WEEKLY;BYDAY=MO
