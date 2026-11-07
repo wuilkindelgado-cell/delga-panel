@@ -60,6 +60,16 @@ function vPlan() {
     <div style="color:var(--suave);font-size:13px;margin-bottom:12px">Se suscribe al Calendario del iPhone y te avisa con notificación aunque la app esté cerrada. Producción en bloque: sábado temas, domingo grabas y programamos los 7, y cada día te avisa cuando sale el video para responder comentarios.</div>
     <a class="btn" style="width:100%" href="webcal://${esc(base)}recordatorios.ics">📅 Añadir a mi Calendario</a>
     <div style="color:var(--tenue);font-size:12px;margin-top:10px">Si no se abre: Ajustes → Calendario → Cuentas → Añadir cuenta → Otra → Añadir calendario suscrito → pega <span style="-webkit-user-select:text;user-select:text;color:var(--suave)">https://${esc(base)}recordatorios.ics</span></div></div>`;
+  if (!leer('dp-ideas-init')) {
+    const hoy = new Date().toISOString();
+    const base = [
+      ['Récords imposibles #2: el gol más rápido de la historia', 'futbol'], ['¿Qué pasó con… el Milan? (#2)', 'futbol'], ['¿Qué pasó con… el Barça después de Messi?', 'futbol'],
+      ['Tu mouse toma 6.000 fotos por segundo', 'tronics'], ['Tu tarjeta del bus no tiene batería… y habla', 'tronics'], ['El airbag decide en milisegundos', 'tronics'],
+      ['Hay un resorte microscópico dentro de tu celular (giroscopio MEMS)', 'tronics'], ['La lavadora pesa tu ropa sin balanza', 'tronics'], ['La puerta del súper te ve con un radar', 'tronics'],
+    ];
+    guardar('dp-ideas', JSON.stringify([...leerJSON('dp-ideas', []), ...base.map(([t, m]) => ({t, m, f: hoy}))]));
+    guardar('dp-ideas-init', '1');
+  }
   const ideas = leerJSON('dp-ideas', []);
   h += `<div class="card"><h3>💡 Banco de ideas <small>${ideas.length}</small></h3>
     <div style="display:flex;gap:8px;margin-bottom:6px"><input id="nuevaIdea" class="buscar" style="margin:0" placeholder="Ej: historia del transistor…"><button class="btn" id="addIdea" style="padding:0 16px">＋</button></div>

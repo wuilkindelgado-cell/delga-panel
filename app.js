@@ -15,6 +15,7 @@ const hace = (iso) => {
 const diasDesde = (iso) => Math.max(1, (Date.now() - new Date(iso)) / 864e5);
 const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 const leer = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const corta = (s, n) => { const a = Array.from(String(s ?? '')); return a.length > n ? a.slice(0, n).join('') + '…' : a.join(''); };
 const media = (a) => (a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0);
 const mediana = (a) => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
 
@@ -146,6 +147,50 @@ function filaVideo(v, i) {
 const filaConsejo = (r) => `<div class="consejo"><div class="p p${r.prioridad}"></div><div><small>${esc(r.nombre)}</small><div>${esc(r.texto)}</div></div></div>`;
 const todosVideos = () => filtrar(D.ok).flatMap((c) => c.videos);
 
+// ------------------------------------------------------------------ tarjetas nuevas de Inicio
+const MARCAS = [['delgatronics', '⚙️ Delgatronics'], ['delgafutbol', '⚽ Delgafutbol']];
+/** "Hoy": a qué hora toca publicar y hace cuánto salió el último video de cada marca. */
+function tarjetaHoy() {
+  const ahora = new Date(), dia = (ahora.getDay() + 6) % 7;
+  const plan = D.plan || {}, hora = plan.horarios ? plan.horarios[String(dia)] : plan.hora;
+  const marcas = MARCAS.filter(([m]) => E.filtro === 'todos' || E.filtro === m || ['youtube', 'tiktok'].includes(E.filtro));
+  const filas = marcas.map(([m, nombre]) => {
+    const vs = D.ok.filter((c) => c.marca === m && (E.filtro !== 'youtube' && E.filtro !== 'tiktok' || c.plataforma === E.filtro)).flatMap((c) => c.videos);
+    const ult = vs.sort((a, b) => b.publicado.localeCompare(a.publicado))[0];
+    if (!ult) return '';
+    const horas = (Date.now() - new Date(ult.publicado)) / 36e5;
+    const estado = horas < 24 ? ['ok', '✔ al día'] : horas < 48 ? ['medio', '⏳ toca hoy'] : ['mal', `⚠️ ${Math.floor(horas / 24)} días sin subir`];
+    return `<div class="hoy-fila"><div><b>${nombre}</b><div class="hoy-sub">último: ${hace(ult.publicado)} · ${esc(corta(ult.titulo, 38))}</div></div><span class="hoy-est ${estado[0]}">${estado[1]}</span></div>`;
+  }).join('');
+  const horaTxt = hora != null ? `${String(hora).padStart(2, '0')}:00` : '—';
+  const yaPaso = hora != null && ahora.getHours() >= hora;
+  return `<div class="card hoy"><h3>🎬 Hoy <small>${ahora.toLocaleDateString('es', {weekday: 'long', day: 'numeric', month: 'short'})}</small></h3>
+    <div class="hoy-hora"><span>Hora de publicar</span><b class="num">${horaTxt}</b><span class="hoy-sub">${yaPaso ? 'ya pasó la hora de hoy' : 'mejor hora según tus datos'}</span></div>${filas}</div>`;
+}
+/** Crecimiento real día a día (diferencias entre fotos diarias), en vez de totales planos. */
+function tarjetaCrecimiento(cs) {
+  const porDia = {};
+  for (const c of cs) {
+    const s = c.serie || [];
+    for (let i = 1; i < s.length; i++) {
+      const f = s[i].fecha, p = (porDia[f] = porDia[f] || {seg: 0, vis: 0});
+      p.seg += (s[i].seguidores || 0) - (s[i - 1].seguidores || 0);
+      p.vis += Math.max(0, (s[i].vistas || 0) - (s[i - 1].vistas || 0));
+    }
+  }
+  let dias = Object.keys(porDia).sort();
+  if (E.periodo !== 'todo') dias = dias.slice(-Number(E.periodo === '1' ? 1 : E.periodo));
+  if (!dias.length) return `<div class="card"><h3>📈 Crecimiento diario</h3><div class="vacio">Hace falta al menos 2 días de historial.</div></div>`;
+  const tv = dias.reduce((t, d) => t + porDia[d].vis, 0), ts = dias.reduce((t, d) => t + porDia[d].seg, 0);
+  const mejor = dias.reduce((a, d) => (porDia[d].vis > porDia[a].vis ? d : a), dias[0]);
+  return `<div class="card"><h3>📈 Crecimiento diario <small>${NOMBRE_P[E.periodo]}</small></h3>
+    <div class="kpis"><div class="kpi"><span class="etq">Vistas nuevas</span><b class="num">${fmt(tv)}</b><span class="delta igual">${fmt(tv / dias.length)}/día</span></div>
+    <div class="kpi"><span class="etq">Seguidores nuevos</span><b class="num ${ts > 0 ? 'sube' : ts < 0 ? 'baja' : ''}">${ts > 0 ? '+' : ''}${fmt(ts)}</b><span class="delta igual">${(ts / dias.length).toFixed(1).replace('.', ',')}/día</span></div>
+    <div class="kpi"><span class="etq">Mejor día</span><b class="num">${fecha(mejor)}</b><span class="delta igual">${fmt(porDia[mejor].vis)} vistas</span></div></div>
+    <div class="etq" style="margin-top:12px">Vistas nuevas por día</div>${barrasV(dias.map((d) => ({x: d, y: porDia[d].vis})), 'var(--cian)', 110)}
+    ${ts === 0 && dias.length >= 3 ? '<div class="aviso" style="margin:10px 0 0">Las vistas suben pero los seguidores no: pide que te sigan a mitad del video y usa series con número.</div>' : ''}</div>`;
+}
+
 // ------------------------------------------------------------------ vistas
 function vInicio() {
   const cs = filtrar(D.ok);
@@ -165,13 +210,11 @@ function vInicio() {
       ${c.estado === 'ok' ? chispa(serieP(c.serie || []).map((s) => s.vistas || 0), c.color) : ''}
       <div class="s num">${c.estado === 'ok' ? `${fmt(c.vistas)} vistas · ${c.num_videos} videos` : ''}</div>
     </button>`).join('')}</div>`;
-  h += `<div class="card"><h3>Seguidores en el tiempo <small>${NOMBRE_P[E.periodo]}</small></h3>${linea('seg', cs.map((c) => ({nombre: c.nombre + (c.plataforma === 'youtube' ? ' YT' : ' TT'), color: c.color, punteada: c.plataforma === 'tiktok', datos: serieP(c.serie || []).map((s) => ({x: s.fecha, y: s.seguidores || 0}))})))}
-    <div class="leyenda">${cs.map((c) => `<span><i style="background:${c.color}"></i>${esc(c.nombre)} ${c.plataforma === 'youtube' ? 'YT' : 'TT'}</span>`).join('')}</div></div>`;
+  h += tarjetaHoy();
+  h += tarjetaCrecimiento(cs);
   const vids = todosVideos();
   const alza = vids.filter((v) => v.delta24 > 0).sort((a, b) => b.delta24 - a.delta24).slice(0, 3);
   if (alza.length) h += `<div class="card"><h3>🚀 Despegando <small>últimas 24 h</small></h3>${alza.map((v) => filaVideo(v)).join('')}</div>`;
-  const ultimos = [...vids].sort((a, b) => b.publicado.localeCompare(a.publicado)).slice(0, 3);
-  if (ultimos.length) h += `<div class="card"><h3>🆕 Lo último que subiste</h3>${ultimos.map((v) => filaVideo(v)).join('')}</div>`;
   const recs = D.recomendaciones.filter((r) => E.filtro === 'todos' || r.canal === 'general' || filtrar(D.canales).some((c) => c.id === r.canal)).slice(0, 2);
   if (recs.length) h += `<div class="card"><h3>💡 Lo más importante ahora <button class="chip" data-tab="plan">ver plan</button></h3>${recs.map(filaConsejo).join('')}</div>`;
   return h;
@@ -233,6 +276,16 @@ function vAnalizar() {
   const vids = cs.flatMap((c) => c.videos).filter((v) => v.duracion);
   const dur = tramos.map(([k, a, b]) => { const x = vids.filter((v) => v.duracion >= a && v.duracion < b); return {k, v: Math.round(mediana(x.map((v) => v.vistas))), txt: x.length ? `${fmt(mediana(x.map((v) => v.vistas)))} (${x.length})` : '—'}; });
   h += `<div class="card"><h3>⏱ ¿Qué duración funciona?</h3>${barrasH(dur, 'var(--violeta)')}<div class="leyenda">Vistas medianas por duración (entre paréntesis, nº de videos).</div></div>`;
+  // Retención: qué videos se ven hasta el final (solo YouTube da este dato)
+  const conRet = cs.flatMap((c) => c.videos).filter((v) => v.retencion != null && v.vistas >= 30).sort((a, b) => b.retencion - a.retencion);
+  if (conRet.length >= 3) {
+    const filaR = (v) => `<button class="fila-ret" data-video="${esc(v.canal.id)}|${esc(v.id)}"><span class="ret ${v.retencion >= 70 ? 'ok' : v.retencion >= 50 ? 'medio' : 'mal'}">${pct(v.retencion, 0)}</span><span class="t">${esc(corta(v.titulo, 52))}</span><span class="d">${v.duracion}s</span></button>`;
+    const mR = mediana(conRet.map((v) => v.retencion));
+    h += `<div class="card"><h3>👀 ¿Lo ven hasta el final? <small>retención · YouTube</small></h3>
+      <div class="etq">Los que más enganchan</div>${conRet.slice(0, 4).map(filaR).join('')}
+      <div class="etq" style="margin-top:10px">Donde más se van</div>${conRet.slice(-3).reverse().map(filaR).join('')}
+      <div class="leyenda">Tu mediana: ${pct(mR, 0)}. En Shorts conviene pasar del 70 %: gancho en el primer segundo y menos de 50 s.</div></div>`;
+  }
   // Analíticas de YouTube
   for (const c of cs.filter((c) => c.plataforma === 'youtube')) {
     const a = c.analiticas || {};
@@ -254,7 +307,7 @@ function vAnalizar() {
 }
 
 // Metas (se guardan en este celular)
-function metas() { try { return JSON.parse(leer('dp-metas') || 'null') || []; } catch (e) { return []; } }
+function metas() { try { return (JSON.parse(leer('dp-metas') || 'null') || []).filter((m) => m.canal); } catch (e) { return []; } }
 function metasPorDefecto() {
   return D.ok.map((c) => {
     const s = c.seguidores, obj = s < 100 ? 100 : s < 1000 ? 1000 : s < 10000 ? 10000 : Math.ceil((s * 2) / 1e4) * 1e4;
@@ -263,7 +316,8 @@ function metasPorDefecto() {
 }
 function vMetas() {
   let lista = metas();
-  if (!lista.length) { lista = metasPorDefecto(); guardar('dp-metas', JSON.stringify(lista)); }
+  if (!lista.length && !leer('dp-metas-init')) { lista = metasPorDefecto(); guardar('dp-metas', JSON.stringify(lista)); guardar('dp-metas-init', '1'); }
+  lista = lista.filter((m) => m.canal);
   let h = `<div class="card"><h3>🎯 Tus metas <small>se guardan en este celular</small></h3>`;
   lista.forEach((m, i) => {
     const c = D.ok.find((x) => x.id === m.canal);
@@ -273,7 +327,11 @@ function vMetas() {
     const falta = m.objetivo - actual;
     let eta = 'Calculando ritmo: hace falta al menos un día de historial.';
     if (falta <= 0) { eta = '🎉 ¡Meta cumplida!'; const k = `dp-fiesta-${m.canal}-${m.metrica}-${m.objetivo}`; if (!leer(k)) { guardar(k, '1'); setTimeout(confeti, 300); } }
-    else if (ritmo != null && ritmo > 0) { const dias = Math.ceil(falta / ritmo); const f = new Date(Date.now() + dias * 864e5); eta = `Al ritmo actual (${fmt(ritmo)}/día) llegas en ~${fmt(dias)} días · ${f.toLocaleDateString('es', {day: 'numeric', month: 'short', year: 'numeric'})}`; }
+    else if (ritmo != null && ritmo > 0) {
+      const dias = Math.ceil(falta / ritmo); const f = new Date(Date.now() + dias * 864e5);
+      const r = ritmo >= 10 ? fmt(ritmo) + '/día' : ritmo >= 1 ? ritmo.toFixed(1).replace('.', ',') + '/día' : `1 cada ${Math.round(1 / ritmo)} días`;
+      eta = dias > 365 ? `Al ritmo actual (${r}) tardarías más de un año. Con 1 video diario y series se acelera mucho.` : `Al ritmo actual (${r}) llegas en ~${fmt(dias)} días · ${f.toLocaleDateString('es', {day: 'numeric', month: 'short', year: 'numeric'})}`;
+    }
     else if (ritmo != null) eta = 'Sin crecimiento reciente: publica para reactivar el ritmo.';
     h += `<div class="meta-item"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><div>${plat(c.plataforma)} <b>${esc(c.nombre)}</b> · ${m.metrica}</div><button class="chip" data-borrar-meta="${i}">✕</button></div>
       <div class="progreso"><i style="width:${p.toFixed(1)}%"></i></div>
@@ -333,6 +391,18 @@ function abrirVideo(cid, vid) {
       ${comp('Vistas', v.vistas, c.mediana)}${comp('Interacción', v.engagement, c.mediaEng, (x) => pct(x))}
       ${v.retencion != null ? comp('Retención', v.retencion, media(pub.filter((x) => x.retencion != null).map((x) => x.retencion)), (x) => pct(x, 0)) : ''}
     </div></div>`;
+  // El mismo video en la otra plataforma (misma marca, publicado con ≤ 2 días de diferencia).
+  const otra = D.ok.filter((x) => x.marca === c.marca && x.plataforma !== c.plataforma).flatMap((x) => x.videos)
+    .map((x) => ({x, d: Math.abs(new Date(x.publicado) - new Date(v.publicado)) / 864e5})).filter((o) => o.d <= 2).sort((a, b) => a.d - b.d)[0];
+  if (otra) {
+    const g = otra.x, yt = c.plataforma === 'youtube' ? v : g, tt = c.plataforma === 'youtube' ? g : v;
+    const fila = (n, a, b, f = fmt) => `<div class="dual"><span>${n}</span><b class="${(a || 0) >= (b || 0) ? 'gana' : ''}">${f(a)}</b><b class="${(b || 0) > (a || 0) ? 'gana' : ''}">${f(b)}</b></div>`;
+    h += `<div class="card"><h3>▶ YouTube vs ♪ TikTok <small>mismo video</small></h3>
+      <div class="dual cab"><span></span><b>${plat('youtube')} YouTube</b><b>${plat('tiktok')} TikTok</b></div>
+      ${fila('Vistas', yt.vistas, tt.vistas)}${fila('Me gusta', yt.likes, tt.likes)}${fila('Comentarios', yt.comentarios, tt.comentarios)}${fila('Interacción', yt.engagement, tt.engagement, (x) => pct(x))}
+      <div class="leyenda">${yt.vistas >= tt.vistas ? `En YouTube tuvo ${fmt(yt.vistas / Math.max(1, tt.vistas))}× más vistas.` : `En TikTok tuvo ${fmt(tt.vistas / Math.max(1, yt.vistas))}× más vistas.`}</div>
+      <button class="chip" style="margin-top:8px" data-video="${esc(g.canal.id)}|${esc(g.id)}">Ver la versión de ${g.canal.plataforma === 'youtube' ? 'YouTube' : 'TikTok'} →</button></div>`;
+  }
   if ((v.hist || []).length) h += `<div class="card"><h3>Vistas en el tiempo</h3>${linea('vid', [{nombre: 'vistas', color: c.color, datos: v.hist.map((p) => ({x: p.f, y: p.v}))}], {alto: 130})}</div>`;
   h += `<a class="btn" style="width:100%" href="${esc(v.url)}" target="_blank" rel="noopener">Abrir en ${c.plataforma === 'youtube' ? 'YouTube' : 'TikTok'} ↗</a>`;
   $('#hojaCont').innerHTML = h;
@@ -368,7 +438,7 @@ document.addEventListener('click', (e) => {
     if (!obj) { $('#mObjetivo').focus(); return; }
     const l = metas(); l.push({canal: $('#mCanal').value, metrica: $('#mMetrica').value, objetivo: obj}); guardar('dp-metas', JSON.stringify(l));
   }
-  if (t.dataset.borrarMeta != null) { const l = metas(); l.splice(Number(t.dataset.borrarMeta), 1); guardar('dp-metas', JSON.stringify(l.length ? l : [])); if (!l.length) guardar('dp-metas', '[{"canal":"","metrica":"seguidores","objetivo":1}]'); }
+  if (t.dataset.borrarMeta != null) { const l = metas(); l.splice(Number(t.dataset.borrarMeta), 1); guardar('dp-metas', JSON.stringify(l)); guardar('dp-metas-init', '1'); }
   if (t.dataset.tab) { const a = TABS.indexOf(E.tab), b = TABS.indexOf(t.dataset.tab); irA(t.dataset.tab, b > a ? 'izq' : b < a ? 'der' : null); return; }
   if (t.dataset.canal) { const c = D.canales.find((x) => x.id === t.dataset.canal); E.filtro = c.plataforma === 'youtube' && E.filtro === 'youtube' ? c.marca : c.marca; E.tab = 'analizar'; window.scrollTo({top: 0}); }
   if (t.dataset.filtro) { E.filtro = t.dataset.filtro; guardar('dp-filtro', E.filtro); }
