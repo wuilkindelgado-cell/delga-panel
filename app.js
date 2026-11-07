@@ -7,7 +7,7 @@ const fmt = (n) => (n == null || isNaN(n) ? '—' : Math.abs(n) >= 1e6 ? (n / 1e
 const pct = (n, d = 1) => (n == null || isNaN(n) ? '—' : n.toFixed(d).replace('.', ',') + ' %');
 const delta = (n, suf = '') => (n == null ? '<span class="delta igual">—</span>' : `<span class="delta ${n > 0 ? 'sube' : n < 0 ? 'baja' : 'igual'}">${n > 0 ? '▲' : n < 0 ? '▼' : '='} ${fmt(Math.abs(n))}${suf}</span>`);
 const plat = (p) => `<span class="plat ${p}">${p === 'youtube' ? '▶' : '♪'}</span>`;
-const fecha = (iso) => new Date(iso).toLocaleDateString('es', {day: 'numeric', month: 'short'});
+const fecha = (iso) => new Date(String(iso).length === 10 ? iso + 'T12:00' : iso).toLocaleDateString('es', {day: 'numeric', month: 'short'});
 const hace = (iso) => {
   const m = Math.round((Date.now() - new Date(iso)) / 60000);
   return m < 1 ? 'ahora' : m < 60 ? `hace ${m} min` : m < 1440 ? `hace ${Math.round(m / 60)} h` : `hace ${Math.round(m / 1440)} d`;
@@ -167,6 +167,23 @@ function tarjetaHoy() {
   return `<div class="card hoy"><h3>🎬 Hoy <small>${ahora.toLocaleDateString('es', {weekday: 'long', day: 'numeric', month: 'short'})}</small></h3>
     <div class="hoy-hora"><span>Hora de publicar</span><b class="num">${horaTxt}</b><span class="hoy-sub">${yaPaso ? 'ya pasó la hora de hoy' : 'mejor hora según tus datos'}</span></div>${filas}</div>`;
 }
+/** Barras finas por día con su número encima (no se estiran aunque haya pocos días). */
+function barrasDias(datos) {
+  const W = 340, H = 150, max = Math.max(1, ...datos.map((d) => d.y));
+  const paso = Math.min(46, (W - 8) / datos.length), ancho = Math.max(4, Math.min(26, paso * 0.62));
+  const x0 = W - 4 - paso * datos.length; // alineadas a la derecha: lo más reciente al final
+  const verNum = datos.length <= 14;
+  let g = `<svg class="graf" viewBox="0 0 ${W} ${H}"><line x1="0" x2="${W}" y1="${H - 28}" y2="${H - 28}" stroke="#24315a"/>`;
+  datos.forEach((d, i) => {
+    const h = Math.max(2, (d.y / max) * (H - 58)), cx = x0 + paso * i + paso / 2, y = H - 28 - h;
+    const op = 0.55 + 0.45 * (d.y / max);
+    g += `<rect x="${cx - ancho / 2}" y="${y}" width="${ancho}" height="${h}" rx="5" fill="url(#gradCrec)" opacity="${op.toFixed(2)}"><title>${fecha(d.x)}: ${fmt(d.y)} vistas</title></rect>`;
+    if (verNum) g += `<text x="${cx}" y="${y - 6}" fill="#eef3ff" font-size="11" font-weight="700" text-anchor="middle">${fmt(d.y)}</text>`;
+    if (verNum || i === 0 || i === datos.length - 1) g += `<text x="${cx}" y="${H - 12}" fill="#8f9cc0" font-size="10" text-anchor="middle">${new Date(d.x + 'T12:00').toLocaleDateString('es', {day: 'numeric', month: 'numeric'})}</text>`;
+    if (verNum && d.s) g += `<text x="${cx}" y="${H - 1}" fill="${d.s > 0 ? '#2ee66b' : '#ff6b81'}" font-size="9" text-anchor="middle">${d.s > 0 ? '+' : ''}${d.s} seg</text>`;
+  });
+  return g + `<defs><linearGradient id="gradCrec" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00e5ff"/><stop offset="100%" stop-color="#7a5cff"/></linearGradient></defs></svg>`;
+}
 /** Crecimiento real día a día (diferencias entre fotos diarias), en vez de totales planos. */
 function tarjetaCrecimiento(cs) {
   const porDia = {};
@@ -187,7 +204,7 @@ function tarjetaCrecimiento(cs) {
     <div class="kpis"><div class="kpi"><span class="etq">Vistas nuevas</span><b class="num">${fmt(tv)}</b><span class="delta igual">${fmt(tv / dias.length)}/día</span></div>
     <div class="kpi"><span class="etq">Seguidores nuevos</span><b class="num ${ts > 0 ? 'sube' : ts < 0 ? 'baja' : ''}">${ts > 0 ? '+' : ''}${fmt(ts)}</b><span class="delta igual">${(ts / dias.length).toFixed(1).replace('.', ',')}/día</span></div>
     <div class="kpi"><span class="etq">Mejor día</span><b class="num">${fecha(mejor)}</b><span class="delta igual">${fmt(porDia[mejor].vis)} vistas</span></div></div>
-    <div class="etq" style="margin-top:12px">Vistas nuevas por día</div>${barrasV(dias.map((d) => ({x: d, y: porDia[d].vis})), 'var(--cian)', 110)}
+    <div class="etq" style="margin-top:12px">Vistas nuevas por día</div>${barrasDias(dias.map((d) => ({x: d, y: porDia[d].vis, s: porDia[d].seg})))}
     ${ts === 0 && dias.length >= 3 ? '<div class="aviso" style="margin:10px 0 0">Las vistas suben pero los seguidores no: pide que te sigan a mitad del video y usa series con número.</div>' : ''}</div>`;
 }
 
