@@ -156,5 +156,25 @@ $('#guardarToken').addEventListener('click', () => { const v = $('#token').value
 $('#desconectar').addEventListener('click', () => { if (confirm('¿Quitar el acceso de este celular?')) { guardar('dg-token', null); cargar(); } });
 document.addEventListener('visibilitychange', () => { if (!document.hidden && $('#prompter').classList.contains('oculto')) cargar(); });
 
+// Conexión por QR: la PC muestra un QR con …/grabar/#t=<token>. En iOS la app de inicio no comparte datos con Safari,
+// así que además se ofrece copiar el token para pegarlo una vez dentro de la app instalada.
+const enInicio = window.navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+if (location.hash.startsWith('#t=')) {
+  const tk = decodeURIComponent(location.hash.slice(3));
+  history.replaceState(null, '', location.pathname);
+  guardar('dg-token', tk);
+  if (!enInicio) {
+    document.body.insertAdjacentHTML('afterbegin', `<div class="card" id="pasoQR" style="border-color:var(--verde)">
+      <b class="ok">✔ Conectado</b>
+      <p style="font-size:14px;line-height:1.5;color:var(--suave)">Para usarla como app: <b>1.</b> toca «Copiar acceso». <b>2.</b> Compartir <span style="font-size:18px">⎋</span> → <b>Agregar a inicio</b>. <b>3.</b> Ábrela desde el icono 🎙️ y pega el acceso (solo esta vez).</p>
+      <button class="btn verde" id="copiarTk">Copiar acceso</button></div>`);
+    $('#copiarTk').addEventListener('click', async () => { try { await navigator.clipboard.writeText(tk); toast('✔ Copiado. Ahora: Compartir → Agregar a inicio'); } catch (e) { prompt('Copia este acceso:', tk); } });
+  }
+} else if (!enInicio && !leer('dg-aviso-inicio')) {
+  document.body.insertAdjacentHTML('afterbegin', `<div class="card" style="font-size:14px;color:var(--suave)">💡 Agrégala a la pantalla de inicio: Compartir → <b>Agregar a inicio</b>.</div>`);
+  guardar('dg-aviso-inicio', '1');
+}
+$('#token').addEventListener('paste', () => setTimeout(() => $('#guardarToken').click(), 50));
+
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 cargar();
