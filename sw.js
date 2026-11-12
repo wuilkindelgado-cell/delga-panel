@@ -1,5 +1,5 @@
 // Service worker: app disponible sin conexión; los datos se piden primero a la red.
-const CACHE = 'delga-panel-v15';
+const CACHE = 'delga-panel-v16';
 const BASE = ['./', 'index.html', 'app.js', 'plan.js', 'grabar.js', 'manifest.webmanifest', 'iconos/icono-192.png', 'iconos/icono-512.png', 'iconos/apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
