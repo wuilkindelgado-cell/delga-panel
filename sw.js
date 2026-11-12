@@ -1,9 +1,9 @@
 // Service worker: app disponible sin conexión; los datos se piden primero a la red.
-const CACHE = 'delga-panel-v13';
+const CACHE = 'delga-panel-v14';
 const BASE = ['./', 'index.html', 'app.js', 'plan.js', 'grabar.js', 'manifest.webmanifest', 'iconos/icono-192.png', 'iconos/icono-512.png', 'iconos/apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(BASE)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(BASE.map((b) => new Request(b, {cache: 'reload'})))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {
@@ -18,7 +18,7 @@ self.addEventListener('fetch', (e) => {
   if (esDatos || esApp) {
     // red primero, caché si no hay conexión
     e.respondWith(
-      fetch(e.request)
+      fetch(e.request, {cache: 'no-cache'}) // siempre revalida con GitHub (evita la caché HTTP de 10 min)
         .then((r) => {
           const copia = r.clone();
           caches.open(CACHE).then((c) => c.put(e.request.url.split('?')[0], copia));

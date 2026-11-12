@@ -476,4 +476,14 @@ $('#compartir').addEventListener('click', async () => {
 document.addEventListener('visibilitychange', () => { if (!document.hidden && D) entrar(leer('dp-clave') || '', true); });
 
 addEventListener('load', () => { const cl = leer('dp-clave') || leer('delga-clave'); if (cl) entrar(cl, true).then(() => typeof contar === 'function' && contar()); });
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+// Actualización automática: al volver a la app busca versión nueva y, si llega, recarga una sola vez.
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then((reg) => {
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update().catch(() => {}); });
+  }).catch(() => {});
+  let recargado = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (recargado || (typeof GR !== 'undefined' && GR.rec && GR.rec.state === 'recording')) return;
+    recargado = true; location.reload();
+  });
+}
