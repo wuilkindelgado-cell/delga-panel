@@ -115,7 +115,13 @@ function soltarPantalla() { try { wake?.release(); } catch (e) {} wake = null; }
 const b64 = (b) => new Promise((ok, mal) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.onerror = mal; r.readAsDataURL(b); });
 function sello() { const d = new Date(), p = (n) => String(n).padStart(2, '0'); return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`; }
 
+const duracion = (b) => new Promise((ok) => { const a = new Audio(); a.preload = 'metadata'; a.onloadedmetadata = () => ok(isFinite(a.duration) ? a.duration : 0); a.onerror = () => ok(0); a.src = URL.createObjectURL(b); });
+
 async function enviar(archivo, extension) {
+  const seg = await duracion(archivo);
+  const largo = seg ? ` (${Math.floor(seg / 60)}:${String(Math.round(seg % 60)).padStart(2, '0')})` : '';
+  const aviso = seg && seg < 3 ? '\n\n⚠️ Este audio dura menos de 3 segundos. ¿Seguro que no fue un toque por error?' : '';
+  if (!confirm(`¿Enviar este audio${largo} a la PC?\n\n${actual ? '🎬 ' + actual.tema : '📁 Audio suelto → carpeta _entrada'}${aviso}`)) return;
   const destino = actual ? actual.id.replace(/\//g, '__') : '_entrada';
   const nombre = `${destino}@@${sello()}.${extension}`;
   const btn = $('#enviar'); const txt = btn.textContent;
