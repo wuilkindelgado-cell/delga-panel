@@ -1,9 +1,9 @@
-"""Actualización automática en la nube con GitHub Actions (sin depender de la laptop).
+﻿"""ActualizaciÃ³n automÃ¡tica en la nube con GitHub Actions (sin depender de la laptop).
 
-- `preparar()` (en la PC): sube al repo del panel el motor (este código), el flujo de GitHub Actions
+- `preparar()` (en la PC): sube al repo del panel el motor (este cÃ³digo), el flujo de GitHub Actions
   y un `estado.enc.json` con los tokens + historial CIFRADOS con una clave que se guarda como
   secreto de GitHub (DELGA_ESTADO_CLAVE). Ejecutarlo de nuevo si se reconecta alguna cuenta en la PC.
-- `ciclo()` (en GitHub Actions, cada 3 h): descifra el estado, recolecta las métricas, escribe
+- `ciclo()` (en GitHub Actions, cada hora): descifra el estado, recolecta las mÃ©tricas, escribe
   `datos.enc.json` para la app y vuelve a cifrar el estado (con los tokens renovados).
 """
 from __future__ import annotations
@@ -14,15 +14,15 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from .cifrado import cifrar, clave_panel, descifrar
+from .cifrado import cifrar, clave_panel, con_buzon, descifrar
 from .config import HISTORIAL, RAIZ, SECRETOS, escribir_json, leer_json, secreto
 
-ARCHIVOS_SECRETOS = ["tiktok_app.json", "clave_panel.txt"]  # + yt_*.json y tt_*.json
+ARCHIVOS_SECRETOS = ["tiktok_app.json", "clave_panel.txt", "grabar_token.txt"]  # + yt_*.json y tt_*.json
 
-FLUJO = """name: Actualizar métricas
+FLUJO = """name: Actualizar mÃ©tricas
 on:
   schedule:
-    - cron: "17 */3 * * *"   # cada 3 horas
+    - cron: "17 */6 * * *"   # respaldo; el reloj principal es cron-job.org (cada hora, workflow_dispatch)
   workflow_dispatch: {}
 permissions:
   contents: write
@@ -34,11 +34,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: pip install -q -r motor/requirements.txt
-      - name: Recolectar métricas
+      - name: Recolectar mÃ©tricas
         env:
           DELGA_ESTADO_CLAVE: ${{ secrets.DELGA_ESTADO_CLAVE }}
           DELGA_SECRETOS: ${{ runner.temp }}/secretos
@@ -50,8 +52,14 @@ jobs:
           git config user.name "delga-bot"
           git config user.email "delga-bot@users.noreply.github.com"
           git add datos.enc.json estado.enc.json recordatorios.ics
-          git diff --cached --quiet || git commit -m "Métricas $(date -u +%Y-%m-%dT%H:%MZ)"
-          git push
+          git diff --cached --quiet || git commit -m "MÃ©tricas $(date -u +%Y-%m-%dT%H:%MZ)"
+          # compactar el historial cuando crece (evita que el repo pese demasiado)
+          if [ "$(git rev-list --count HEAD)" -gt 300 ]; then
+            git checkout --orphan compacto && git commit -qm "Historial compactado $(date -u +%Y-%m-%d)" && git branch -D main && git branch -m main
+            git push -f origin main
+          else
+            git push
+          fi
 """
 
 
@@ -64,7 +72,7 @@ def _clave_estado() -> str:
 
 def _empaquetar() -> dict:
     archivos = {}
-    for p in sorted(SECRETOS.glob("*.json")) + [SECRETOS / "clave_panel.txt"]:
+    for p in sorted(SECRETOS.glob("*.json")) + [SECRETOS / "clave_panel.txt", SECRETOS / "grabar_token.txt"]:
         if p.name.startswith(("yt_", "tt_")) or p.name in ARCHIVOS_SECRETOS:
             if p.exists():
                 archivos[p.name] = p.read_text(encoding="utf-8")
@@ -105,14 +113,14 @@ def ciclo() -> None:
     """Se ejecuta en GitHub Actions."""
     from .metricas import recolectar
 
-    raiz_repo = RAIZ.parent  # motor/ está dentro del repo
+    raiz_repo = RAIZ.parent  # motor/ estÃ¡ dentro del repo
     clave = os.environ["DELGA_ESTADO_CLAVE"]
     _desempaquetar(descifrar(leer_json(raiz_repo / "estado.enc.json"), clave))
     datos = recolectar()
-    escribir_json(raiz_repo / "datos.enc.json", cifrar(datos, clave_panel()))
+    escribir_json(raiz_repo / "datos.enc.json", cifrar(con_buzon(datos), clave_panel()))
     from .calendario import generar_ics
 
     (raiz_repo / "recordatorios.ics").write_text(generar_ics(datos), encoding="utf-8", newline="")
     escribir_json(raiz_repo / "estado.enc.json", cifrar(_empaquetar(), clave))
     ok = [c["id"] for c in datos["canales"] if c["estado"] == "ok"]
-    print(f"Actualizado {datos['generado']} · canales OK: {ok}")
+    print(f"Actualizado {datos['generado']} Â· canales OK: {ok}")

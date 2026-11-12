@@ -1,6 +1,6 @@
-// Service worker: app disponible sin conexión; los datos se piden primero a la red.
-const CACHE = 'delga-panel-v7';
-const BASE = ['./', 'index.html', 'app.js', 'plan.js', 'manifest.webmanifest', 'iconos/icono-192.png', 'iconos/icono-512.png', 'iconos/apple-touch-icon.png'];
+﻿// Service worker: app disponible sin conexiÃ³n; los datos se piden primero a la red.
+const CACHE = 'delga-panel-v8';
+const BASE = ['./', 'index.html', 'app.js', 'plan.js', 'grabar.js', 'manifest.webmanifest', 'iconos/icono-192.png', 'iconos/icono-512.png', 'iconos/apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(BASE)).then(() => self.skipWaiting()));
@@ -16,7 +16,7 @@ self.addEventListener('fetch', (e) => {
   const esDatos = url.pathname.endsWith('datos.enc.json');
   const esApp = BASE.some((b) => url.pathname.endsWith(b.replace('./', '/')) || url.pathname.endsWith('/'));
   if (esDatos || esApp) {
-    // red primero, caché si no hay conexión
+    // red primero, cachÃ© si no hay conexiÃ³n
     e.respondWith(
       fetch(e.request)
         .then((r) => {

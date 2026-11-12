@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8">
@@ -152,7 +152,7 @@ nav{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;background:rg
 nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;font-weight:600;color:var(--tenue);padding:5px 0}
 nav button svg{width:23px;height:23px}
 nav button.on{color:var(--cian)}
-/* sensación de app nativa */
+/* sensaciÃ³n de app nativa */
 html{touch-action:manipulation;-webkit-text-size-adjust:100%}
 html,body{overscroll-behavior:none}
 body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
@@ -205,6 +205,52 @@ body{padding-top:0}
 .idea span{flex:1}
 .racha{font-size:40px;font-weight:800;line-height:1}
 #confeti{position:fixed;inset:0;pointer-events:none;z-index:50}
+/* ---------- Grabar ---------- */
+nav .navrec{position:relative}
+nav .navrec .mic{width:50px;height:50px;margin-top:-22px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#ff4d6d,#ff2a4f);color:#fff;box-shadow:0 6px 18px #ff2a4f66,0 0 0 4px var(--fondo);position:relative}
+nav .navrec .mic svg{width:24px;height:24px}
+nav .navrec.on{color:var(--rojo)}
+nav .navrec.on .mic{box-shadow:0 6px 22px #ff2a4fbb,0 0 0 4px var(--fondo),0 0 0 6px #ff4d6d55}
+.burbuja{position:absolute;top:-4px;right:-6px;min-width:19px;height:19px;padding:0 5px;border-radius:10px;background:var(--oro);color:#1a1200;font-size:11px;font-weight:800;display:grid;place-items:center;border:2px solid var(--fondo)}
+.gr-tarjeta{display:block;width:100%;text-align:left;margin:0 0 12px;padding:16px;border-radius:var(--radio);border:1px solid var(--borde);background:linear-gradient(135deg,var(--capa),var(--capa2));position:relative;overflow:hidden}
+.gr-tarjeta::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--cian)}
+.gr-tarjeta.fut::before{background:var(--verde)}
+.gr-tarjeta b{display:block;font-size:18px;line-height:1.25;margin:8px 0 4px}
+.gr-chip{font-size:11px;font-weight:800;letter-spacing:.04em;padding:3px 9px;border-radius:99px;background:#00e5ff1f;color:var(--cian)}
+.gr-tarjeta.fut .gr-chip{background:#2ee66b1f;color:var(--verde)}
+.gr-tit{display:block;color:var(--suave);font-size:13px;line-height:1.35}
+.gr-pie{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12px;color:var(--tenue)}
+.gr-ir{background:var(--rojo);color:#fff;font-weight:800;font-size:13px;padding:7px 14px;border-radius:99px}
+.gr-vacio{text-align:center;display:flex;flex-direction:column;gap:6px;padding:28px 16px}
+.gr-vacio span{color:var(--suave);font-size:14px}
+#prompter{position:fixed;inset:0;height:100dvh;background:#000;display:flex;flex-direction:column;z-index:60;-webkit-user-select:none}
+#prompter .barra,#controles{flex:none}
+#prompter .barra{display:flex;align-items:center;gap:8px;padding:calc(var(--sa-top) + 8px) 12px 8px;background:#05070f;border-bottom:1px solid #1a2242}
+#prompter .barra .t{flex:1;font-size:13px;color:var(--suave);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pbtn{background:var(--capa2);border:1px solid var(--borde);border-radius:10px;padding:9px 12px;font-size:15px;font-weight:700;color:var(--texto)}
+#aislar.on{color:var(--verde)}
+#texto::before{content:'';display:block;height:22vh}
+#texto::after{content:'';display:block;height:55vh}
+#texto{flex:1 1 0;min-height:0;overflow-y:auto;padding:0 22px;font-size:var(--tam,30px);line-height:1.45;font-weight:600;color:#fff}
+#texto p{margin:0 0 1.1em}
+#texto strong{color:var(--oro)}
+#texto .p1{color:#4d7bff;font-weight:800}
+#texto .p2{display:block;height:.55em}
+#guia{position:fixed;left:0;right:0;top:calc(22vh + 60px);height:3px;background:#ff4d6d80;pointer-events:none;z-index:61}
+#controles{background:#05070f;border-top:1px solid #1a2242;padding:12px 14px calc(var(--sa-bot) + 12px)}
+#controles .fila,.gr-conf .fila{display:flex;gap:10px;align-items:center}
+#vel{flex:1;accent-color:var(--cian)}
+#rec{width:76px;height:76px;border-radius:50%;background:#fff;display:grid;place-items:center;flex:none;margin:0 auto}
+#rec i{display:block;width:56px;height:56px;border-radius:50%;background:var(--rojo);transition:all .2s}
+#rec.on i{width:28px;height:28px;border-radius:6px}
+#reloj{font-variant-numeric:tabular-nums;font-size:22px;font-weight:700;min-width:70px;text-align:center}
+#reloj.on{color:var(--rojo)}
+#subirArchivo{min-width:70px}
+#escucha{width:100%;margin:6px 0 10px}
+#confirmar{position:fixed;inset:0;z-index:80;background:#000a;display:grid;place-items:center;padding:20px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.gr-conf{width:100%;max-width:360px;background:var(--capa2);border:1px solid var(--borde);border-radius:22px;padding:22px;text-align:center}
+.gr-conf-dato{margin-top:10px;padding:10px;border-radius:12px;background:#ffffff0d;font-weight:600}
+.gr-conf-alerta{margin-top:10px;padding:10px;border-radius:12px;background:#ffc40022;color:var(--oro);font-weight:700;font-size:14px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -218,12 +264,12 @@ body{padding-top:0}
   <div id="errorClave"></div>
 </div>
 
-<div id="tirar">↻</div><canvas id="confeti"></canvas>
+<div id="tirar">â†»</div><canvas id="confeti"></canvas>
 <header>
   <div style="min-width:0"><h1 id="titulo">Inicio</h1><small id="actualizado"></small></div>
   <div style="display:flex;gap:8px">
-    <button class="icobtn" id="compartir" aria-label="Compartir resumen">⤴</button>
-    <button class="icobtn" id="refrescar" aria-label="Actualizar">↻</button>
+    <button class="icobtn" id="compartir" aria-label="Compartir resumen">â¤´</button>
+    <button class="icobtn" id="refrescar" aria-label="Actualizar">â†»</button>
   </div>
 </header>
 <main id="vista"></main>
@@ -234,11 +280,37 @@ body{padding-top:0}
 <nav>
   <button data-tab="inicio" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Inicio</button>
   <button data-tab="videos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M10 9l5 3-5 3z"/></svg>Videos</button>
+  <button data-tab="grabar" class="navrec"><span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span class="burbuja" style="display:none"></span></span>Grabar</button>
   <button data-tab="plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4M8 15l2.5 2.5L16 13"/></svg>Plan</button>
   <button data-tab="analizar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Analizar</button>
   <button data-tab="metas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg>Metas</button>
 </nav>
+<!-- Grabar: teleprompter a pantalla completa -->
+<div id="prompter" class="oculto">
+  <div class="barra">
+    <button class="pbtn" id="cerrarP" aria-label="Cerrar">âœ•</button>
+    <div class="t" id="pTitulo"></div>
+    <button class="pbtn" id="menos">Aâˆ’</button><button class="pbtn" id="mas">A+</button>
+  </div>
+  <div id="texto"></div>
+  <div id="guia"></div>
+  <div id="controles">
+    <div id="modoGrabar">
+      <div class="fila"><span class="hoy-sub">Avance</span><input type="range" id="vel" min="0" max="10" step="1" value="3"><button class="pbtn" id="arriba" aria-label="Al inicio">â¤’</button></div>
+      <div class="fila" style="margin-top:10px"><div id="reloj">0:00</div><button id="rec" aria-label="Grabar"><i></i></button><button class="pbtn" id="subirArchivo">ðŸ“Ž Archivo</button></div>
+      <button class="pbtn" id="aislar" style="width:100%;margin-top:10px"></button>
+    </div>
+    <div id="modoRevisar" class="oculto">
+      <audio id="escucha" controls playsinline></audio>
+      <div class="fila"><button class="btn sec" id="repetir" style="flex:1">â†º Repetir</button><button class="btn" id="enviar" style="flex:2;background:var(--verde)">Enviar a la PC âžœ</button></div>
+    </div>
+  </div>
+</div>
+<div id="confirmar" class="oculto"><div class="gr-conf"><div id="confCont"></div><div class="fila" style="margin-top:16px"><button class="btn sec" id="confNo" style="flex:1">Cancelar</button><button class="btn" id="confSi" style="flex:1;background:var(--verde)">SÃ­, enviar</button></div></div></div>
+<input type="file" id="archivo" accept="audio/*,video/*,.m4a,.mp3,.wav,.caf" class="oculto">
+
 <script src="app.js"></script>
 <script src="plan.js"></script>
+<script src="grabar.js"></script>
 </body>
 </html>

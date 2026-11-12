@@ -233,7 +233,106 @@ def subir(c: dict, video: str, descripcion: str, privacidad: str = "SELF_ONLY") 
     return d["publish_id"]
 
 
+def borrador(c: dict, video: str) -> str:
+    """Envía el video a la bandeja de TikTok del creador (scope video.upload).
+    Le llega una notificación en la app para revisarlo, poner el texto y publicarlo."""
+    h = _h(c)
+    tam = Path(video).stat().st_size
+    trozo = min(tam, 10 * 1024 * 1024)
+    n = max(1, tam // trozo)
+    d = _ok(
+        requests.post(
+            f"{API}/post/publish/inbox/video/init/",
+            headers={**h, "Content-Type": "application/json; charset=UTF-8"},
+            json={"source_info": {"source": "FILE_UPLOAD", "video_size": tam, "chunk_size": trozo, "total_chunk_count": n}},
+            timeout=30,
+        )
+    )
+    with open(video, "rb") as f:
+        for i in range(n):
+            ini = i * trozo
+            fin = tam - 1 if i == n - 1 else ini + trozo - 1
+            f.seek(ini)
+            datos = f.read(fin - ini + 1)
+            r = requests.put(d["upload_url"], data=datos, headers={"Content-Type": "video/mp4", "Content-Range": f"bytes {ini}-{fin}/{tam}", "Content-Length": str(len(datos))}, timeout=300)
+            r.raise_for_status()
+            print(f"   subiendo… {int((i + 1) / n * 100)}%")
+    return d["publish_id"]
+
+
 def estado_publicacion(c: dict, publish_id: str) -> dict:
     return _ok(requests.post(f"{API}/post/publish/status/fetch/", headers=_h(c), json={"publish_id": publish_id}, timeout=30))
 
 
+
+
+# ---------------------------------------------------------------------------
+# Para el Publicador (pantalla web local): login en dos pasos y publicación directa.
+# ---------------------------------------------------------------------------
+def url_autorizacion() -> tuple[str, str, str]:
+    """Devuelve (url, state, code_verifier) para iniciar el login de TikTok."""
+    app = _app()
+    verificador = secrets.token_urlsafe(64)[:64]
+    reto = hashlib.sha256(verificador.encode()).hexdigest()
+    estado = secrets.token_urlsafe(16)
+    url = "https://www.tiktok.com/v2/auth/authorize/?" + urllib.parse.urlencode(
+        {
+            "client_key": app["client_key"],
+            "scope": app.get("scopes") or SCOPES,
+            "response_type": "code",
+            "redirect_uri": app.get("redirect_uri", REDIRECT),
+            "state": estado,
+            "code_challenge": reto,
+            "code_challenge_method": "S256",
+            "disable_auto_auth": 1,
+        }
+    )
+    return url, estado, verificador
+
+
+def canjear_codigo(code: str, verificador: str) -> dict:
+    """Canjea el código del login y devuelve el token (con open_id)."""
+    app = _app()
+    r = requests.post(
+        f"{API}/oauth/token/",
+        data={"client_key": app["client_key"], "client_secret": app["client_secret"], "code": code,
+              "grant_type": "authorization_code", "redirect_uri": app.get("redirect_uri", REDIRECT), "code_verifier": verificador},
+        timeout=30,
+    ).json()
+    if "access_token" not in r:
+        raise RuntimeError(f"TikTok rechazó el login: {r}")
+    r["obtenido"] = time.time()
+    return r
+
+
+def guardar_token(c: dict, tok: dict) -> None:
+    escribir_json(_token_ruta(c), tok)
+
+
+def creator_info(c: dict) -> dict:
+    """Datos del creador para la pantalla de publicación (avatar, apodo, privacidades permitidas, límites)."""
+    return _ok(requests.post(f"{API}/post/publish/creator_info/query/", headers={**_h(c), "Content-Type": "application/json; charset=UTF-8"}, timeout=30))
+
+
+def publicar_directo(c: dict, video: str, post_info: dict) -> str:
+    """Publicación directa (Direct Post) con las opciones elegidas por el creador en la pantalla."""
+    h = _h(c)
+    tam = Path(video).stat().st_size
+    trozo = min(tam, 10 * 1024 * 1024)
+    n = max(1, tam // trozo)
+    d = _ok(
+        requests.post(
+            f"{API}/post/publish/video/init/",
+            headers={**h, "Content-Type": "application/json; charset=UTF-8"},
+            json={"post_info": post_info, "source_info": {"source": "FILE_UPLOAD", "video_size": tam, "chunk_size": trozo, "total_chunk_count": n}},
+            timeout=30,
+        )
+    )
+    with open(video, "rb") as f:
+        for i in range(n):
+            ini = i * trozo
+            fin = tam - 1 if i == n - 1 else ini + trozo - 1
+            f.seek(ini)
+            datos = f.read(fin - ini + 1)
+            requests.put(d["upload_url"], data=datos, headers={"Content-Type": "video/mp4", "Content-Range": f"bytes {ini}-{fin}/{tam}", "Content-Length": str(len(datos))}, timeout=600).raise_for_status()
+    return d["publish_id"]

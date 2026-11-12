@@ -44,3 +44,11 @@ def cifrar(datos: dict, clave: str) -> dict:
     cif = AESGCM(k).encrypt(iv, texto, None)
     b = lambda x: base64.b64encode(x).decode()
     return {"v": 1, "it": ITERACIONES, "sal": b(sal), "iv": b(iv), "datos": b(cif)}
+
+
+def con_buzon(datos: dict) -> dict:
+    """Añade el acceso del buzón de audios (app Grabar) a los datos que viajan CIFRADOS con la clave del panel."""
+    from .config import secreto
+
+    ruta = secreto("grabar_token.txt")
+    return {**datos, "buzon": ruta.read_text(encoding="ascii").strip()} if ruta.exists() else datos

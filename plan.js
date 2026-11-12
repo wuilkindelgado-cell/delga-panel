@@ -123,7 +123,7 @@ addEventListener('scroll', () => $('header').classList.toggle('borde', scrollY >
 
 let gesto = null;
 document.addEventListener('touchstart', (e) => {
-  if ($('#hoja').classList.contains('on') || !D) return;
+  if ($('#hoja').classList.contains('on') || !D || e.target.closest('#prompter,#confirmar')) return;
   const t = e.touches[0];
   gesto = {x: t.clientX, y: t.clientY, top: scrollY <= 0, bloqueo: !!e.target.closest('.chips,svg[data-graf],input,select,.seg,.semana')};
 }, {passive: true});

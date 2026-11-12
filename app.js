@@ -433,14 +433,14 @@ $('#hoja').addEventListener('touchstart', (e) => { if ($('#hoja').scrollTop <= 0
 $('#hoja').addEventListener('touchmove', (e) => { if (toqueY != null && e.touches[0].clientY - toqueY > 90) { toqueY = null; cerrarHoja(); } }, {passive: true});
 
 // ------------------------------------------------------------------ pintar y eventos
-const TABS = ['inicio', 'videos', 'plan', 'analizar', 'metas'];
-const TITULOS = {inicio: 'Inicio', videos: 'Videos', plan: 'Plan', analizar: 'Analizar', metas: 'Metas'};
+const TABS = ['inicio', 'videos', 'grabar', 'plan', 'analizar', 'metas'];
+const TITULOS = {inicio: 'Inicio', videos: 'Videos', grabar: 'Grabar', plan: 'Plan', analizar: 'Analizar', metas: 'Metas'};
 function pintar() {
   if (!D) return;
   graficas = {};
   $('#titulo').textContent = TITULOS[E.tab];
   $('#actualizado').textContent = `Actualizado ${hace(D.generado)} · ${new Date(D.generado).toLocaleString('es', {weekday: 'short', hour: '2-digit', minute: '2-digit'})}`;
-  $('#vista').innerHTML = {inicio: vInicio, videos: vVideos, plan: vPlan, analizar: vAnalizar, metas: vMetas}[E.tab]();
+  $('#vista').innerHTML = {inicio: vInicio, videos: vVideos, grabar: vGrabar, plan: vPlan, analizar: vAnalizar, metas: vMetas}[E.tab]();
   document.querySelectorAll('nav button').forEach((b) => b.classList.toggle('on', b.dataset.tab === E.tab));
   const q = $('#q');
   if (q) q.addEventListener('input', () => { E.q = q.value; const pos = q.selectionStart; pintar(); const n = $('#q'); n.focus(); n.setSelectionRange(pos, pos); });
@@ -466,7 +466,7 @@ document.addEventListener('click', (e) => {
 });
 $('#entrar').addEventListener('click', () => entrar($('#clave').value.trim()));
 $('#clave').addEventListener('keydown', (e) => e.key === 'Enter' && entrar($('#clave').value.trim()));
-$('#refrescar').addEventListener('click', async () => { const b = $('#refrescar'); b.classList.add('girando'); await entrar(leer('dp-clave') || '', true); b.classList.remove('girando'); });
+$('#refrescar').addEventListener('click', async () => { const b = $('#refrescar'); b.classList.add('girando'); await entrar(leer('dp-clave') || '', true); if (E.tab === 'grabar' && typeof cargarGuiones === 'function') await cargarGuiones(true); b.classList.remove('girando'); });
 $('#compartir').addEventListener('click', async () => {
   if (!D) return;
   const t = D.totales;
