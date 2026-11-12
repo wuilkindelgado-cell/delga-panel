@@ -1,6 +1,6 @@
-﻿'use strict';
-// PestaÃ±a Â«GrabarÂ» del Delga Panel: guiones pendientes â†’ teleprompter â†’ grabar â†’ confirmar â†’ buzÃ³n privado â†’ la PC lo baja a su carpeta.
-// El acceso al buzÃ³n viene dentro de los datos cifrados del panel (D.buzon); no hay que pegar nada.
+'use strict';
+// Pestaña «Grabar» del Delga Panel: guiones pendientes → teleprompter → grabar → confirmar → buzón privado → la PC lo baja a su carpeta.
+// El acceso al buzón viene dentro de los datos cifrados del panel (D.buzon); no hay que pegar nada.
 
 const BUZON = 'https://api.github.com/repos/wuilkindelgado-cell/delga-buzon/contents';
 const GR = {lista: JSON.parse(leer('dg-cache') || '[]'), cargado: 0, cargando: false, error: '', actual: null, rec: null, trozos: [], blob: null, ext: 'm4a', t0: 0, reloj: 0, scroll: 0, wake: null, enviados: JSON.parse(leer('dg-enviados') || '[]')};
@@ -30,38 +30,38 @@ function marcarPendientes() {
 function vGrabar() {
   cargarGuiones();
   let h = '';
-  if (GR.error === 'sin-acceso') h += `<div class="card"><h3>ðŸ”’ Falta el acceso al buzÃ³n</h3><div class="vacio">Toca â†» arriba en unos minutos: la PC lo estÃ¡ agregando a tus datos.</div></div>`;
+  if (GR.error === 'sin-acceso') h += `<div class="card"><h3>🔒 Falta el acceso al buzón</h3><div class="vacio">Toca ↻ arriba en unos minutos: la PC lo está agregando a tus datos.</div></div>`;
   if (!GR.lista.length) {
-    h += `<div class="card gr-vacio"><div style="font-size:46px">ðŸŽ‰</div><b>No hay guiones por grabar</b><span>Cuando Claude escriba uno nuevo aparece aquÃ­ al instante.</span></div>`;
+    h += `<div class="card gr-vacio"><div style="font-size:46px">🎉</div><b>No hay guiones por grabar</b><span>Cuando Claude escriba uno nuevo aparece aquí al instante.</span></div>`;
   } else {
     h += `<div class="etq" style="margin:2px 2px 10px">${GR.lista.length === 1 ? 'Tienes 1 guion por grabar' : `Tienes ${GR.lista.length} guiones por grabar`}</div>`;
     h += GR.lista.map((g, i) => {
       const fut = g.canal === 'Delgafutbol';
       const seg = Math.round(g.lineas.join(' ').split(/\s+/).length / 2.6);
       return `<button class="gr-tarjeta ${fut ? 'fut' : 'tec'}" data-guion="${i}">
-        <span class="gr-chip">${fut ? 'âš½' : 'âš¡'} ${esc(g.canal)}</span>
+        <span class="gr-chip">${fut ? '⚽' : '⚡'} ${esc(g.canal)}</span>
         <b>${esc(g.tema)}</b>
         <span class="gr-tit">${esc(g.titulo)}</span>
-        <span class="gr-pie"><span>ðŸ“ ${g.lineas.length} partes Â· â‰ˆ${seg} s</span><span class="gr-ir">ðŸŽ™ï¸ Grabar</span></span>
+        <span class="gr-pie"><span>📝 ${g.lineas.length} partes · ≈${seg} s</span><span class="gr-ir">🎙️ Grabar</span></span>
       </button>`;
     }).join('');
   }
-  h += `<div class="card"><h3>ðŸ“Ž Â¿Grabaste con Notas de Voz?</h3><div style="color:var(--suave);font-size:13px;margin-bottom:10px">Abre el guion y toca Â«ArchivoÂ», o envÃ­alo suelto (va a la carpeta _entrada).</div><button class="btn sec" id="grSuelto" style="width:100%">Subir audio suelto</button></div>`;
-  if (GR.enviados.length) h += `<div class="card"><h3>ðŸ“¤ Enviados</h3>${GR.enviados.slice(0, 5).map((x) => `<div class="hoy-fila"><span>${esc(x.tema)}</span><span class="hoy-sub">${hace(x.cuando)}</span></div>`).join('')}<div class="hoy-sub" style="margin-top:8px">La PC los baja a su carpeta en â‰¤ 3 min.</div></div>`;
+  h += `<div class="card"><h3>📎 ¿Grabaste con Notas de Voz?</h3><div style="color:var(--suave);font-size:13px;margin-bottom:10px">Abre el guion y toca «Archivo», o envíalo suelto (va a la carpeta _entrada).</div><button class="btn sec" id="grSuelto" style="width:100%">Subir audio suelto</button></div>`;
+  if (GR.enviados.length) h += `<div class="card"><h3>📤 Enviados</h3>${GR.enviados.slice(0, 5).map((x) => `<div class="hoy-fila"><span>${esc(x.tema)}</span><span class="hoy-sub">${hace(x.cuando)}</span></div>`).join('')}<div class="hoy-sub" style="margin-top:8px">La PC los baja a su carpeta en ≤ 3 min.</div></div>`;
   return h;
 }
 
 // ---------- teleprompter ----------
 const fmtLinea = (l) => esc(l)
   .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-  .replace(/\s*\/\/\s*/g, ' <span class="p1">â¸</span><span class="p2"></span>')
-  .replace(/\s+\/\s+/g, ' <span class="p1">Â·</span> ')
-  .replace(/\s*\/\s*$/g, ' <span class="p1">Â·</span>');
+  .replace(/\s*\/\/\s*/g, ' <span class="p1">⏸</span><span class="p2"></span>')
+  .replace(/\s+\/\s+/g, ' <span class="p1">·</span> ')
+  .replace(/\s*\/\s*$/g, ' <span class="p1">·</span>');
 
 function abrirPrompter(g) {
   GR.actual = g;
   $('#pTitulo').textContent = g ? g.tema : 'Audio suelto';
-  $('#texto').innerHTML = g ? g.lineas.map((l) => `<p>${fmtLinea(l)}</p>`).join('') : '<p style="color:var(--suave)">Graba o sube tu audio. IrÃ¡ a la carpeta _entrada de la PC.</p>';
+  $('#texto').innerHTML = g ? g.lineas.map((l) => `<p>${fmtLinea(l)}</p>`).join('') : '<p style="color:var(--suave)">Graba o sube tu audio. Irá a la carpeta _entrada de la PC.</p>';
   $('#texto').style.setProperty('--tam', (leer('dg-tam') || 30) + 'px');
   $('#vel').value = leer('dg-vel') || 3;
   $('#texto').scrollTop = 0;
@@ -72,7 +72,7 @@ function abrirPrompter(g) {
   document.body.style.overflow = 'hidden';
 }
 function cerrarPrompter() {
-  if (GR.rec && GR.rec.state === 'recording') { if (!confirm('Â¿Descartar la grabaciÃ³n en curso?')) return; pararGrab(true); }
+  if (GR.rec && GR.rec.state === 'recording') { if (!confirm('¿Descartar la grabación en curso?')) return; pararGrab(true); }
   $('#prompter').classList.add('oculto');
   document.body.style.overflow = '';
   soltarPant();
@@ -84,7 +84,7 @@ function avanzarTexto() {
   const paso = (ahora) => { $('#texto').scrollTop += +$('#vel').value * 9 * ((ahora - ult) / 1000); ult = ahora; GR.scroll = requestAnimationFrame(paso); };
   GR.scroll = requestAnimationFrame(paso);
 }
-const pintarAislar = () => { const on = leer('dg-aislar') !== '0'; const b = $('#aislar'); b.textContent = on ? 'ðŸŽ§ Aislar ruido: SÃ' : 'ðŸŽ™ï¸ Aislar ruido: NO'; b.classList.toggle('on', on); };
+const pintarAislar = () => { const on = leer('dg-aislar') !== '0'; const b = $('#aislar'); b.textContent = on ? '🎧 Aislar ruido: SÍ' : '🎙️ Aislar ruido: NO'; b.classList.toggle('on', on); };
 
 async function empezarGrab() {
   try {
@@ -111,7 +111,7 @@ async function empezarGrab() {
     $('#texto').scrollTop = 0;
     avanzarTexto();
     try { GR.wake = await navigator.wakeLock?.request('screen'); } catch (e) {}
-  } catch (e) { aviso('No pude usar el micrÃ³fono: Ajustes â†’ Safari â†’ MicrÃ³fono'); }
+  } catch (e) { aviso('No pude usar el micrófono: Ajustes → Safari → Micrófono'); }
 }
 function pararGrab(descartar = false) {
   clearInterval(GR.reloj); cancelAnimationFrame(GR.scroll);
@@ -122,7 +122,7 @@ function pararGrab(descartar = false) {
 function soltarPant() { try { GR.wake?.release(); } catch (e) {} GR.wake = null; }
 function aviso(txt, ms = 3000) { const t = document.createElement('div'); t.className = 'toast'; t.style.zIndex = 70; t.innerHTML = txt; document.body.appendChild(t); setTimeout(() => t.remove(), ms); }
 
-// ---------- envÃ­o (con confirmaciÃ³n) ----------
+// ---------- envío (con confirmación) ----------
 const aB64 = (b) => new Promise((ok, mal) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.onerror = mal; r.readAsDataURL(b); });
 const durAudio = (b) => new Promise((ok) => { const a = new Audio(); a.preload = 'metadata'; a.onloadedmetadata = () => ok(isFinite(a.duration) ? a.duration : 0); a.onerror = () => ok(0); a.src = URL.createObjectURL(b); });
 const selloT = () => { const d = new Date(), p = (n) => String(n).padStart(2, '0'); return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`; };
@@ -130,10 +130,10 @@ const selloT = () => { const d = new Date(), p = (n) => String(n).padStart(2, '0
 function confirmar(seg) {
   const g = GR.actual;
   const largo = seg ? `${Math.floor(seg / 60)}:${String(Math.round(seg % 60)).padStart(2, '0')}` : '';
-  $('#confCont').innerHTML = `<div style="font-size:40px">ðŸ“¤</div><b style="font-size:19px">Â¿Enviar a la PC?</b>
-    <div class="gr-conf-dato">${g ? (g.canal === 'Delgafutbol' ? 'âš½ ' : 'âš¡ ') + esc(g.tema) : 'ðŸ“ Audio suelto â†’ _entrada'}</div>
-    ${largo ? `<div class="gr-conf-dato">â±ï¸ ${largo}</div>` : ''}
-    ${seg && seg < 3 ? '<div class="gr-conf-alerta">âš ï¸ Dura menos de 3 s. Â¿Fue un toque por error?</div>' : ''}`;
+  $('#confCont').innerHTML = `<div style="font-size:40px">📤</div><b style="font-size:19px">¿Enviar a la PC?</b>
+    <div class="gr-conf-dato">${g ? (g.canal === 'Delgafutbol' ? '⚽ ' : '⚡ ') + esc(g.tema) : '📁 Audio suelto → _entrada'}</div>
+    ${largo ? `<div class="gr-conf-dato">⏱️ ${largo}</div>` : ''}
+    ${seg && seg < 3 ? '<div class="gr-conf-alerta">⚠️ Dura menos de 3 s. ¿Fue un toque por error?</div>' : ''}`;
   $('#confirmar').classList.remove('oculto');
   return new Promise((ok) => { $('#confSi').onclick = () => { $('#confirmar').classList.add('oculto'); ok(true); }; $('#confNo').onclick = () => { $('#confirmar').classList.add('oculto'); ok(false); }; });
 }
@@ -143,7 +143,7 @@ async function enviarAudio() {
   if (!(await confirmar(await durAudio(GR.blob)))) return;
   const g = GR.actual;
   const nombre = `${g ? g.id.replace(/\//g, '__') : '_entrada'}@@${selloT()}.${GR.ext}`;
-  const b = $('#enviar'); b.disabled = true; b.textContent = 'Enviandoâ€¦';
+  const b = $('#enviar'); b.disabled = true; b.textContent = 'Enviando…';
   try {
     const r = await fetch(`${BUZON}/entrada/${encodeURIComponent(nombre)}`, {method: 'PUT', headers: hdr({'Content-Type': 'application/json'}), body: JSON.stringify({message: `Audio: ${g ? g.tema : 'suelto'}`, content: await aB64(GR.blob)})});
     if (!r.ok) throw new Error(r.status);
@@ -152,10 +152,10 @@ async function enviarAudio() {
     GR.blob = null;
     $('#prompter').classList.add('oculto'); document.body.style.overflow = '';
     if (typeof confeti === 'function') try { confeti(); } catch (e) {}
-    aviso('âœ” Enviado Â· en â‰¤ 3 min estarÃ¡ en su carpeta', 4000);
+    aviso('✔ Enviado · en ≤ 3 min estará en su carpeta', 4000);
     pintar();
-  } catch (e) { aviso('âœ– No se pudo enviar (' + e.message + '). Revisa la conexiÃ³n.', 4500); }
-  b.disabled = false; b.textContent = 'Enviar a la PC âžœ';
+  } catch (e) { aviso('✖ No se pudo enviar (' + e.message + '). Revisa la conexión.', 4500); }
+  b.disabled = false; b.textContent = 'Enviar a la PC ➜';
 }
 
 // ---------- eventos ----------
@@ -171,7 +171,7 @@ $('#repetir').addEventListener('click', () => { GR.blob = null; $('#reloj').text
 $('#enviar').addEventListener('click', enviarAudio);
 $('#arriba').addEventListener('click', () => ($('#texto').scrollTop = 0));
 $('#vel').addEventListener('input', (e) => guardar('dg-vel', e.target.value));
-$('#aislar').addEventListener('click', () => { if (GR.rec && GR.rec.state === 'recording') return aviso('CÃ¡mbialo antes de grabar'); guardar('dg-aislar', leer('dg-aislar') === '0' ? '1' : '0'); pintarAislar(); });
+$('#aislar').addEventListener('click', () => { if (GR.rec && GR.rec.state === 'recording') return aviso('Cámbialo antes de grabar'); guardar('dg-aislar', leer('dg-aislar') === '0' ? '1' : '0'); pintarAislar(); });
 const tamTexto = (d) => { const n = Math.max(20, Math.min(48, (+leer('dg-tam') || 30) + d)); guardar('dg-tam', n); $('#texto').style.setProperty('--tam', n + 'px'); };
 $('#menos').addEventListener('click', () => tamTexto(-2));
 $('#mas').addEventListener('click', () => tamTexto(2));

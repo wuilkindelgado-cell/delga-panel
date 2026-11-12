@@ -1,9 +1,9 @@
-﻿"""ActualizaciÃ³n automÃ¡tica en la nube con GitHub Actions (sin depender de la laptop).
+"""Actualización automática en la nube con GitHub Actions (sin depender de la laptop).
 
-- `preparar()` (en la PC): sube al repo del panel el motor (este cÃ³digo), el flujo de GitHub Actions
+- `preparar()` (en la PC): sube al repo del panel el motor (este código), el flujo de GitHub Actions
   y un `estado.enc.json` con los tokens + historial CIFRADOS con una clave que se guarda como
   secreto de GitHub (DELGA_ESTADO_CLAVE). Ejecutarlo de nuevo si se reconecta alguna cuenta en la PC.
-- `ciclo()` (en GitHub Actions, cada hora): descifra el estado, recolecta las mÃ©tricas, escribe
+- `ciclo()` (en GitHub Actions, cada hora): descifra el estado, recolecta las métricas, escribe
   `datos.enc.json` para la app y vuelve a cifrar el estado (con los tokens renovados).
 """
 from __future__ import annotations
@@ -19,7 +19,7 @@ from .config import HISTORIAL, RAIZ, SECRETOS, escribir_json, leer_json, secreto
 
 ARCHIVOS_SECRETOS = ["tiktok_app.json", "clave_panel.txt", "grabar_token.txt"]  # + yt_*.json y tt_*.json
 
-FLUJO = """name: Actualizar mÃ©tricas
+FLUJO = """name: Actualizar métricas
 on:
   schedule:
     - cron: "17 */6 * * *"   # respaldo; el reloj principal es cron-job.org (cada hora, workflow_dispatch)
@@ -40,7 +40,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -q -r motor/requirements.txt
-      - name: Recolectar mÃ©tricas
+      - name: Recolectar métricas
         env:
           DELGA_ESTADO_CLAVE: ${{ secrets.DELGA_ESTADO_CLAVE }}
           DELGA_SECRETOS: ${{ runner.temp }}/secretos
@@ -52,7 +52,7 @@ jobs:
           git config user.name "delga-bot"
           git config user.email "delga-bot@users.noreply.github.com"
           git add datos.enc.json estado.enc.json recordatorios.ics
-          git diff --cached --quiet || git commit -m "MÃ©tricas $(date -u +%Y-%m-%dT%H:%MZ)"
+          git diff --cached --quiet || git commit -m "Métricas $(date -u +%Y-%m-%dT%H:%MZ)"
           # compactar el historial cuando crece (evita que el repo pese demasiado)
           if [ "$(git rev-list --count HEAD)" -gt 300 ]; then
             git checkout --orphan compacto && git commit -qm "Historial compactado $(date -u +%Y-%m-%d)" && git branch -D main && git branch -m main
@@ -113,7 +113,7 @@ def ciclo() -> None:
     """Se ejecuta en GitHub Actions."""
     from .metricas import recolectar
 
-    raiz_repo = RAIZ.parent  # motor/ estÃ¡ dentro del repo
+    raiz_repo = RAIZ.parent  # motor/ está dentro del repo
     clave = os.environ["DELGA_ESTADO_CLAVE"]
     _desempaquetar(descifrar(leer_json(raiz_repo / "estado.enc.json"), clave))
     datos = recolectar()
@@ -123,4 +123,4 @@ def ciclo() -> None:
     (raiz_repo / "recordatorios.ics").write_text(generar_ics(datos), encoding="utf-8", newline="")
     escribir_json(raiz_repo / "estado.enc.json", cifrar(_empaquetar(), clave))
     ok = [c["id"] for c in datos["canales"] if c["estado"] == "ok"]
-    print(f"Actualizado {datos['generado']} Â· canales OK: {ok}")
+    print(f"Actualizado {datos['generado']} · canales OK: {ok}")

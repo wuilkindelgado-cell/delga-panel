@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8">
@@ -152,7 +152,7 @@ nav{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;background:rg
 nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;font-weight:600;color:var(--tenue);padding:5px 0}
 nav button svg{width:23px;height:23px}
 nav button.on{color:var(--cian)}
-/* sensaciÃ³n de app nativa */
+/* sensación de app nativa */
 html{touch-action:manipulation;-webkit-text-size-adjust:100%}
 html,body{overscroll-behavior:none}
 body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
@@ -264,12 +264,12 @@ nav .navrec.on .mic{box-shadow:0 6px 22px #ff2a4fbb,0 0 0 4px var(--fondo),0 0 0
   <div id="errorClave"></div>
 </div>
 
-<div id="tirar">â†»</div><canvas id="confeti"></canvas>
+<div id="tirar">↻</div><canvas id="confeti"></canvas>
 <header>
   <div style="min-width:0"><h1 id="titulo">Inicio</h1><small id="actualizado"></small></div>
   <div style="display:flex;gap:8px">
-    <button class="icobtn" id="compartir" aria-label="Compartir resumen">â¤´</button>
-    <button class="icobtn" id="refrescar" aria-label="Actualizar">â†»</button>
+    <button class="icobtn" id="compartir" aria-label="Compartir resumen">⤴</button>
+    <button class="icobtn" id="refrescar" aria-label="Actualizar">↻</button>
   </div>
 </header>
 <main id="vista"></main>
@@ -288,25 +288,25 @@ nav .navrec.on .mic{box-shadow:0 6px 22px #ff2a4fbb,0 0 0 4px var(--fondo),0 0 0
 <!-- Grabar: teleprompter a pantalla completa -->
 <div id="prompter" class="oculto">
   <div class="barra">
-    <button class="pbtn" id="cerrarP" aria-label="Cerrar">âœ•</button>
+    <button class="pbtn" id="cerrarP" aria-label="Cerrar">✕</button>
     <div class="t" id="pTitulo"></div>
-    <button class="pbtn" id="menos">Aâˆ’</button><button class="pbtn" id="mas">A+</button>
+    <button class="pbtn" id="menos">A−</button><button class="pbtn" id="mas">A+</button>
   </div>
   <div id="texto"></div>
   <div id="guia"></div>
   <div id="controles">
     <div id="modoGrabar">
-      <div class="fila"><span class="hoy-sub">Avance</span><input type="range" id="vel" min="0" max="10" step="1" value="3"><button class="pbtn" id="arriba" aria-label="Al inicio">â¤’</button></div>
-      <div class="fila" style="margin-top:10px"><div id="reloj">0:00</div><button id="rec" aria-label="Grabar"><i></i></button><button class="pbtn" id="subirArchivo">ðŸ“Ž Archivo</button></div>
+      <div class="fila"><span class="hoy-sub">Avance</span><input type="range" id="vel" min="0" max="10" step="1" value="3"><button class="pbtn" id="arriba" aria-label="Al inicio">⤒</button></div>
+      <div class="fila" style="margin-top:10px"><div id="reloj">0:00</div><button id="rec" aria-label="Grabar"><i></i></button><button class="pbtn" id="subirArchivo">📎 Archivo</button></div>
       <button class="pbtn" id="aislar" style="width:100%;margin-top:10px"></button>
     </div>
     <div id="modoRevisar" class="oculto">
       <audio id="escucha" controls playsinline></audio>
-      <div class="fila"><button class="btn sec" id="repetir" style="flex:1">â†º Repetir</button><button class="btn" id="enviar" style="flex:2;background:var(--verde)">Enviar a la PC âžœ</button></div>
+      <div class="fila"><button class="btn sec" id="repetir" style="flex:1">↺ Repetir</button><button class="btn" id="enviar" style="flex:2;background:var(--verde)">Enviar a la PC ➜</button></div>
     </div>
   </div>
 </div>
-<div id="confirmar" class="oculto"><div class="gr-conf"><div id="confCont"></div><div class="fila" style="margin-top:16px"><button class="btn sec" id="confNo" style="flex:1">Cancelar</button><button class="btn" id="confSi" style="flex:1;background:var(--verde)">SÃ­, enviar</button></div></div></div>
+<div id="confirmar" class="oculto"><div class="gr-conf"><div id="confCont"></div><div class="fila" style="margin-top:16px"><button class="btn sec" id="confNo" style="flex:1">Cancelar</button><button class="btn" id="confSi" style="flex:1;background:var(--verde)">Sí, enviar</button></div></div></div>
 <input type="file" id="archivo" accept="audio/*,video/*,.m4a,.mp3,.wav,.caf" class="oculto">
 
 <script src="app.js"></script>

@@ -1,4 +1,4 @@
-﻿"""Publica el panel (PWA + datos cifrados) en GitHub Pages."""
+"""Publica el panel (PWA + datos cifrados) en GitHub Pages."""
 from __future__ import annotations
 
 import shutil
@@ -13,14 +13,14 @@ REPO = "delga-panel"
 def _git(*args, cwd=None, check=True) -> str:
     r = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True, encoding="utf-8")
     if check and r.returncode != 0:
-        raise SystemExit(f"git {' '.join(args)} fallÃ³: {r.stderr.strip()}")
+        raise SystemExit(f"git {' '.join(args)} falló: {r.stderr.strip()}")
     return r.stdout.strip()
 
 
 def _gh(*args, check=True) -> str:
     r = subprocess.run(["gh", *args], capture_output=True, text=True, encoding="utf-8")
     if check and r.returncode != 0:
-        raise SystemExit(f"gh {' '.join(args)} fallÃ³: {r.stderr.strip()}")
+        raise SystemExit(f"gh {' '.join(args)} falló: {r.stderr.strip()}")
     return r.stdout.strip()
 
 
@@ -33,11 +33,11 @@ def url_panel() -> str:
 
 
 def crear_repo() -> str:
-    """Crea el repositorio pÃºblico y activa GitHub Pages (una sola vez)."""
+    """Crea el repositorio público y activa GitHub Pages (una sola vez)."""
     usuario = usuario_github()
     existe = subprocess.run(["gh", "repo", "view", f"{usuario}/{REPO}"], capture_output=True).returncode == 0
     if not existe:
-        _gh("repo", "create", REPO, "--public", "--description", "Panel de mÃ©tricas Delgatronics/Delgafutbol (datos cifrados)")
+        _gh("repo", "create", REPO, "--public", "--description", "Panel de métricas Delgatronics/Delgafutbol (datos cifrados)")
     return usuario
 
 
@@ -64,9 +64,9 @@ def publicar() -> str:
     (sitio / "recordatorios.ics").write_text(generar_ics(datos), encoding="utf-8", newline="")
     _git("add", "-A", cwd=sitio)
     if _git("status", "--porcelain", cwd=sitio):
-        _git("commit", "-m", f"MÃ©tricas {datos['generado']}", cwd=sitio)
+        _git("commit", "-m", f"Métricas {datos['generado']}", cwd=sitio)
         _git("push", "-u", "origin", "main", cwd=sitio)
-    # activar Pages (si ya estÃ¡ activo, falla en silencio)
+    # activar Pages (si ya está activo, falla en silencio)
     subprocess.run(
         ["gh", "api", "-X", "POST", f"repos/{usuario}/{REPO}/pages", "-f", "source[branch]=main", "-f", "source[path]=/"],
         capture_output=True,
