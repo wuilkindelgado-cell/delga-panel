@@ -46,7 +46,8 @@ function vGrabar() {
       </button>`;
     }).join('');
   }
-  h += `<div class="card"><h3>📎 ¿Grabaste con Notas de Voz?</h3><div style="color:var(--suave);font-size:13px;margin-bottom:10px">Abre el guion y toca «Archivo», o envíalo suelto (va a la carpeta _entrada).</div><button class="btn sec" id="grSuelto" style="width:100%">Subir audio suelto</button></div>`;
+  h += `<button class="gr-libre" id="grLibre"><span class="gr-libre-rec"><i></i></span><span><b>Grabar sin guion</b><small>Va a la carpeta _entrada de la PC</small></span></button>`;
+  h += `<button class="btn sec" id="grSuelto" style="width:100%;margin-bottom:14px">📎 Subir un audio de Notas de Voz</button>`;
   if (GR.enviados.length) h += `<div class="card"><h3>📤 Enviados</h3>${GR.enviados.slice(0, 5).map((x) => `<div class="hoy-fila"><span>${esc(x.tema)}</span><span class="hoy-sub">${hace(x.cuando)}</span></div>`).join('')}<div class="hoy-sub" style="margin-top:8px">La PC los baja a su carpeta en ≤ 3 min.</div></div>`;
   return h;
 }
@@ -61,7 +62,7 @@ const fmtLinea = (l) => esc(l)
 function abrirPrompter(g) {
   GR.actual = g;
   $('#pTitulo').textContent = g ? g.tema : 'Audio suelto';
-  $('#texto').innerHTML = g ? g.lineas.map((l) => `<p>${fmtLinea(l)}</p>`).join('') : '<p style="color:var(--suave)">Graba o sube tu audio. Irá a la carpeta _entrada de la PC.</p>';
+  $('#texto').innerHTML = g ? g.lineas.map((l) => `<p>${fmtLinea(l)}</p>`).join('') : '<p style="color:var(--suave)">Grabación libre, sin guion.<br><br>Toca el botón rojo ⏺ de abajo para empezar y otra vez para parar. Irá a la carpeta _entrada de la PC.</p>';
   $('#texto').style.setProperty('--tam', (leer('dg-tam') || 30) + 'px');
   $('#vel').value = leer('dg-vel') || 3;
   $('#texto').scrollTop = 0;
@@ -111,7 +112,12 @@ async function empezarGrab() {
     $('#texto').scrollTop = 0;
     avanzarTexto();
     try { GR.wake = await navigator.wakeLock?.request('screen'); } catch (e) {}
-  } catch (e) { aviso('No pude usar el micrófono: Ajustes → Safari → Micrófono'); }
+  } catch (e) {
+    const n = e && e.name;
+    aviso(n === 'NotAllowedError' ? '🎙️ Permiso de micrófono negado. iPhone: Ajustes → Safari → Micrófono → Permitir (o borra y vuelve a agregar el panel).'
+      : !navigator.mediaDevices ? '🎙️ Este navegador no deja grabar aquí. Abre el panel en Safari.'
+      : `🎙️ No pude grabar (${n || 'error'}: ${(e && e.message) || ''})`, 7000);
+  }
 }
 function pararGrab(descartar = false) {
   clearInterval(GR.reloj); cancelAnimationFrame(GR.scroll);
@@ -160,9 +166,10 @@ async function enviarAudio() {
 
 // ---------- eventos ----------
 document.addEventListener('click', (e) => {
-  const t = e.target.closest('[data-guion],#grSuelto');
+  const t = e.target.closest('[data-guion],#grSuelto,#grLibre');
   if (!t) return;
-  if (t.id === 'grSuelto') { abrirPrompter(null); $('#archivo').click(); return; }
+  if (t.id === 'grLibre') { abrirPrompter(null); return; }
+  if (t.id === 'grSuelto') { GR.actual = null; $('#archivo').click(); return; }
   abrirPrompter(GR.lista[+t.dataset.guion]);
 });
 $('#cerrarP').addEventListener('click', cerrarPrompter);
@@ -180,6 +187,7 @@ $('#archivo').addEventListener('change', (e) => {
   const f = e.target.files[0]; e.target.value = '';
   if (!f) return;
   GR.blob = f; const m = /\.([a-z0-9]+)$/i.exec(f.name); GR.ext = m ? m[1].toLowerCase() : 'm4a';
+  if ($('#prompter').classList.contains('oculto')) abrirPrompter(GR.actual);
   $('#escucha').src = URL.createObjectURL(f);
   modoPrompter('revisar');
 });
