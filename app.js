@@ -20,7 +20,11 @@ const media = (a) => (a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0);
 const mediana = (a) => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
 
 let D = null;
+// Los avisos abren el panel con #grabar, #videos…: esa pestaña manda.
+const tabDeEnlace = location.hash.slice(1);
 const E = {tab: (leer('dp-tab') || 'inicio').replace('consejos', 'plan'), filtro: leer('dp-filtro') || 'todos', periodo: leer('dp-periodo') || '28', orden: 'recientes', vfiltro: 'todos', q: '', canalA: null};
+
+if (['inicio', 'videos', 'grabar', 'plan', 'analizar', 'metas'].includes(tabDeEnlace)) { E.tab = tabDeEnlace; history.replaceState(null, '', location.pathname); }
 
 // ------------------------------------------------------------------ datos
 const b64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
@@ -228,6 +232,8 @@ function vInicio() {
       <div class="s num">${c.estado === 'ok' ? `${fmt(c.vistas)} vistas · ${c.num_videos} videos` : ''}</div>
     </button>`).join('')}</div>`;
   h += tarjetaHoy();
+  if (typeof tarjetaRevisar === 'function') h += tarjetaRevisar();
+  if (typeof tarjetaComentarios === 'function') h += tarjetaComentarios(cs);
   h += tarjetaCrecimiento(cs);
   const vids = todosVideos();
   const alza = vids.filter((v) => v.delta24 > 0).sort((a, b) => b.delta24 - a.delta24).slice(0, 3);
@@ -293,6 +299,7 @@ function vAnalizar() {
   const vids = cs.flatMap((c) => c.videos).filter((v) => v.duracion);
   const dur = tramos.map(([k, a, b]) => { const x = vids.filter((v) => v.duracion >= a && v.duracion < b); return {k, v: Math.round(mediana(x.map((v) => v.vistas))), txt: x.length ? `${fmt(mediana(x.map((v) => v.vistas)))} (${x.length})` : '—'}; });
   h += `<div class="card"><h3>⏱ ¿Qué duración funciona?</h3>${barrasH(dur, 'var(--violeta)')}<div class="leyenda">Vistas medianas por duración (entre paréntesis, nº de videos).</div></div>`;
+  if (typeof tarjetaSeguidoresVideo === 'function') h += tarjetaSeguidoresVideo(cs);
   // Retención: qué videos se ven hasta el final (solo YouTube da este dato)
   const conRet = cs.flatMap((c) => c.videos).filter((v) => v.retencion != null && v.vistas >= 30).sort((a, b) => b.retencion - a.retencion);
   if (conRet.length >= 3) {
@@ -317,9 +324,6 @@ function vAnalizar() {
       ${a.paises && a.paises.length ? `<div class="etq" style="margin-top:12px">Países</div>${barrasH(a.paises.slice(0, 6).map((r) => { let n = r.country; try { n = new Intl.DisplayNames(['es'], {type: 'region'}).of(r.country); } catch (e) {} return {k: n, v: r.views}; }), 'var(--oro)')}` : ''}
     </div>`;
   }
-  // Comentarios
-  const coms = cs.flatMap((c) => (c.comentarios || []).map((x) => ({...x, c}))).sort((a, b) => b.fecha.localeCompare(a.fecha)).slice(0, 8);
-  if (coms.length) h += `<div class="card"><h3>💬 Últimos comentarios</h3>${coms.map((x) => `<div class="coment"><b>${plat(x.c.plataforma)} ${esc(x.autor)} · ${hace(x.fecha)}</b><br>${esc(x.texto)}</div>`).join('')}</div>`;
   return h;
 }
 

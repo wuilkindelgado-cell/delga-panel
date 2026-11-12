@@ -17,7 +17,7 @@ from pathlib import Path
 from .cifrado import cifrar, clave_panel, con_buzon, descifrar
 from .config import HISTORIAL, RAIZ, SECRETOS, escribir_json, leer_json, secreto
 
-ARCHIVOS_SECRETOS = ["tiktok_app.json", "clave_panel.txt", "grabar_token.txt"]  # + yt_*.json y tt_*.json
+ARCHIVOS_SECRETOS = ["tiktok_app.json", "clave_panel.txt", "grabar_token.txt", "vapid_privada.pem", "buzon_estado.json"]  # + yt_*.json y tt_*.json
 
 FLUJO = """name: Actualizar métricas
 on:
@@ -72,7 +72,7 @@ def _clave_estado() -> str:
 
 def _empaquetar() -> dict:
     archivos = {}
-    for p in sorted(SECRETOS.glob("*.json")) + [SECRETOS / "clave_panel.txt", SECRETOS / "grabar_token.txt"]:
+    for p in sorted(SECRETOS.glob("*.json")) + [SECRETOS / "clave_panel.txt", SECRETOS / "grabar_token.txt", SECRETOS / "vapid_privada.pem"]:
         if p.name.startswith(("yt_", "tt_")) or p.name in ARCHIVOS_SECRETOS:
             if p.exists():
                 archivos[p.name] = p.read_text(encoding="utf-8")
@@ -117,6 +117,16 @@ def ciclo() -> None:
     clave = os.environ["DELGA_ESTADO_CLAVE"]
     _desempaquetar(descifrar(leer_json(raiz_repo / "estado.enc.json"), clave))
     datos = recolectar()
+    try:  # buzón: respuestas a comentarios y aviso de videos que despegan (también con la PC apagada)
+        from . import buzon
+
+        est = buzon._estado_local()
+        n = buzon.respuestas(est)
+        buzon._guardar_estado_local(est)
+        buzon.avisar_despegando(datos)
+        print(f"Buzón: {n} respuesta(s) publicadas")
+    except Exception as e:
+        print(f"Buzón: {str(e)[:200]}")
     escribir_json(raiz_repo / "datos.enc.json", cifrar(con_buzon(datos), clave_panel()))
     from .calendario import generar_ics
 

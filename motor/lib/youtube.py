@@ -195,6 +195,7 @@ def comentarios_recientes(c: dict, maximo: int = 20) -> list[dict]:
         s = it["snippet"]["topLevelComment"]["snippet"]
         out.append(
             {
+                "id": it["snippet"]["topLevelComment"]["id"],
                 "video": it["snippet"].get("videoId"),
                 "autor": s.get("authorDisplayName"),
                 "texto": s.get("textOriginal", "")[:300],
@@ -229,6 +230,12 @@ def editar(c: dict, video_id: str, titulo=None, descripcion=None, etiquetas=None
         cuerpo["status"] = {"privacyStatus": privacidad, "selfDeclaredMadeForKids": st.get("selfDeclaredMadeForKids", False)}
         partes.append("status")
     return yt.videos().update(part=",".join(partes), body=cuerpo).execute()
+
+
+def responder(c: dict, comentario_id: str, texto: str) -> str:
+    """Responde un comentario (como el canal). Devuelve el id de la respuesta."""
+    r = _yt(c).comments().insert(part="snippet", body={"snippet": {"parentId": comentario_id, "textOriginal": texto[:9000]}}).execute()
+    return r["id"]
 
 
 def poner_miniatura(c: dict, video_id: str, imagen: str) -> None:
