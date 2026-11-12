@@ -1,0 +1,16 @@
+{
+  "name": "Delga Grabar",
+  "short_name": "Grabar",
+  "description": "Teleprompter y grabadora: envía tu voz directo a la carpeta del video en la PC",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#070b17",
+  "theme_color": "#070b17",
+  "lang": "es",
+  "icons": [
+    {"src": "iconos/icono-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "iconos/icono-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "iconos/icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
