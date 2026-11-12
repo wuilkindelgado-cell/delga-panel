@@ -54,9 +54,9 @@ function vGrabar() {
 // ---------- teleprompter ----------
 const fmtLinea = (l) => esc(l)
   .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-  .replace(/\s*\/\/\s*/g, ' <span class="p1">⏸</span><span class="p2"></span>')
-  .replace(/\s+\/\s+/g, ' <span class="p1">·</span> ')
-  .replace(/\s*\/\s*$/g, ' <span class="p1">·</span>');
+  .replace(/\s*\/\/\s*/g, ' <span class="pz1">⏸</span><span class="pz2"></span>')
+  .replace(/\s+\/\s+/g, ' <span class="pz1">·</span> ')
+  .replace(/\s*\/\s*$/g, ' <span class="pz1">·</span>');
 
 function abrirPrompter(g) {
   GR.actual = g;
