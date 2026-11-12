@@ -53,46 +53,87 @@ function vGrabar() {
 }
 
 // ---------- teleprompter ----------
+// Pausas: «/» corta → punto suave; «//» larga → respiro. **palabra** → resaltada.
 const fmtLinea = (l) => esc(l)
-  .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-  .replace(/\s*\/\/\s*/g, ' <span class="pz1">⏸</span><span class="pz2"></span>')
-  .replace(/\s+\/\s+/g, ' <span class="pz1">·</span> ')
-  .replace(/\s*\/\s*$/g, ' <span class="pz1">·</span>');
+  .replace(/\*\*(.+?)\*\*/g, '<em>$1</em>')
+  .replace(/\s*\/\/\s*/g, '<span class="pzL" aria-hidden="true"></span>')
+  .replace(/\s+\/\s+/g, ' <span class="pzC" aria-hidden="true"></span> ')
+  .replace(/\s*\/\s*$/g, ' <span class="pzC" aria-hidden="true"></span>');
+const VEL = () => Math.max(1, Math.min(10, +(leer('dg-vel') || 3)));
+const pintarVel = () => { $('#velTxt').textContent = VEL(); };
 
 function abrirPrompter(g) {
   GR.actual = g;
-  $('#pTitulo').textContent = g ? g.tema : 'Audio suelto';
-  $('#texto').innerHTML = g ? g.lineas.map((l) => `<p>${fmtLinea(l)}</p>`).join('') : '<p style="color:var(--suave)">Grabación libre, sin guion.<br><br>Toca el botón rojo ⏺ de abajo para empezar y otra vez para parar. Irá a la carpeta _entrada de la PC.</p>';
-  $('#texto').style.setProperty('--tam', (leer('dg-tam') || 30) + 'px');
-  $('#vel').value = leer('dg-vel') || 3;
+  const fut = g && g.canal === 'Delgafutbol';
+  $('#pCanal').textContent = g ? (fut ? '⚽ Delgafutbol' : '⚡ Delgatronics') : '🎙️ Libre';
+  $('#pCanal').className = 'pchip ' + (g ? (fut ? 'fut' : 'tec') : 'lib');
+  $('#pTitulo').textContent = g ? g.tema : 'Grabación sin guion';
+  $('#texto').innerHTML = g ? g.lineas.map((l) => `<p>${fmtLinea(l)}</p>`).join('')
+    : '<p>Grabación libre, sin guion.</p><p>Toca el botón rojo para empezar y otra vez para parar.</p>';
+  $('#texto').style.setProperty('--tam', (leer('dg-tam') || 32) + 'px');
   $('#texto').scrollTop = 0;
   $('#reloj').textContent = '0:00';
-  pintarAislar();
+  pintarAislar(); pintarVel();
   modoPrompter('grabar');
-  $('#prompter').classList.remove('oculto');
+  $('#prompter').classList.remove('oculto', 'grabando');
   document.body.style.overflow = 'hidden';
+  requestAnimationFrame(() => { ajustarZona(); enfocar(); });
 }
 function cerrarPrompter() {
   if (GR.rec && GR.rec.state === 'recording') { if (!confirm('¿Descartar la grabación en curso?')) return; pararGrab(true); }
+  GR.cancelarCuenta = true;
   $('#prompter').classList.add('oculto');
   document.body.style.overflow = '';
   soltarPant();
 }
 function modoPrompter(m) { $('#modoGrabar').classList.toggle('oculto', m !== 'grabar'); $('#modoRevisar').classList.toggle('oculto', m !== 'revisar'); }
+// La línea de lectura está al 30 % de la zona de texto; el relleno superior hace que el primer párrafo arranque ahí.
+function ajustarZona() { const z = $('#texto'); z.style.setProperty('--pre', Math.round(z.clientHeight * 0.3) + 'px'); }
+function enfocar() {
+  const z = $('#texto'); const caja = z.getBoundingClientRect(); const y = caja.top + caja.height * 0.3 + 10;
+  let activo = null;
+  for (const p of z.children) {
+    const r = p.getBoundingClientRect();
+    let est = r.bottom < y - 4 ? 'leido' : r.top <= y + 6 ? 'activo' : '';
+    if (est === 'activo') { if (activo) est = 'leido'; else activo = p; }
+    p.className = est;
+  }
+  if (!activo) { const sig = [...z.children].find((p) => !p.className); if (sig) sig.className = 'activo'; }
+  const max = z.scrollHeight - z.clientHeight;
+  $('#pProg').style.width = (max > 0 ? Math.min(100, (z.scrollTop / max) * 100) : 0) + '%';
+}
 function avanzarTexto() {
   cancelAnimationFrame(GR.scroll);
   let ult = performance.now();
-  const paso = (ahora) => { $('#texto').scrollTop += +$('#vel').value * 9 * ((ahora - ult) / 1000); ult = ahora; GR.scroll = requestAnimationFrame(paso); };
+  const paso = (ahora) => { $('#texto').scrollTop += VEL() * 9 * ((ahora - ult) / 1000); ult = ahora; enfocar(); GR.scroll = requestAnimationFrame(paso); };
   GR.scroll = requestAnimationFrame(paso);
 }
-const pintarAislar = () => { const on = leer('dg-aislar') !== '0'; const b = $('#aislar'); b.textContent = on ? '🎧 Aislar ruido: SÍ' : '🎙️ Aislar ruido: NO'; b.classList.toggle('on', on); };
+const pintarAislar = () => { const on = leer('dg-aislar') !== '0'; const b = $('#aislar'); b.innerHTML = on ? '🎧 <span>Sin ruido</span>' : '🎙️ <span>Natural</span>'; b.classList.toggle('on', on); };
+
+async function cuentaAtras() {
+  GR.cancelarCuenta = false;
+  const c = $('#cuenta'); c.classList.remove('oculto');
+  for (const n of [3, 2, 1]) {
+    if (GR.cancelarCuenta) break;
+    c.innerHTML = `<b>${n}</b><span>Prepárate…</span>`;
+    await new Promise((r) => setTimeout(r, 800));
+  }
+  c.classList.add('oculto');
+  return !GR.cancelarCuenta;
+}
 
 async function empezarGrab() {
+  if (GR.contando) return;
   try {
     const aislar = leer('dg-aislar') !== '0';
     const flujo = await navigator.mediaDevices.getUserMedia({audio: aislar
       ? {noiseSuppression: true, echoCancellation: true, autoGainControl: true, voiceIsolation: true, channelCount: 1}
       : {noiseSuppression: false, echoCancellation: false, autoGainControl: false, channelCount: 1}});
+    $('#texto').scrollTop = 0; enfocar();
+    GR.contando = true;
+    const seguir = await cuentaAtras();
+    GR.contando = false;
+    if (!seguir) { flujo.getTracks().forEach((t) => t.stop()); return; }
     const tipo = MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : (MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : '');
     GR.ext = tipo.startsWith('audio/mp4') ? 'm4a' : 'webm';
     GR.rec = new MediaRecorder(flujo, tipo ? {mimeType: tipo, audioBitsPerSecond: 192000} : undefined);
@@ -100,6 +141,7 @@ async function empezarGrab() {
     GR.rec.ondataavailable = (e) => e.data.size && GR.trozos.push(e.data);
     GR.rec.onstop = () => {
       flujo.getTracks().forEach((t) => t.stop());
+      $('#prompter').classList.remove('grabando');
       if (GR.rec._descartar) return;
       GR.blob = new Blob(GR.trozos, {type: GR.rec.mimeType || 'audio/mp4'});
       $('#escucha').src = URL.createObjectURL(GR.blob);
@@ -107,14 +149,15 @@ async function empezarGrab() {
     };
     GR.rec.start(1000);
     GR.t0 = Date.now();
+    $('#prompter').classList.add('grabando');
     $('#rec').classList.add('on'); $('#reloj').classList.add('on');
     GR.reloj = setInterval(() => { const s = Math.floor((Date.now() - GR.t0) / 1000); $('#reloj').textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }, 250);
-    $('#texto').scrollTop = 0;
     avanzarTexto();
     try { GR.wake = await navigator.wakeLock?.request('screen'); } catch (e) {}
   } catch (e) {
+    GR.contando = false; $('#cuenta').classList.add('oculto');
     const n = e && e.name;
-    aviso(n === 'NotAllowedError' ? '🎙️ Permiso de micrófono negado. iPhone: Ajustes → Safari → Micrófono → Permitir (o borra y vuelve a agregar el panel).'
+    aviso(n === 'NotAllowedError' ? '🎙️ Permiso de micrófono negado. iPhone: Ajustes → Safari → Micrófono → Permitir.'
       : !navigator.mediaDevices ? '🎙️ Este navegador no deja grabar aquí. Abre el panel en Safari.'
       : `🎙️ No pude grabar (${n || 'error'}: ${(e && e.message) || ''})`, 7000);
   }
@@ -174,12 +217,16 @@ document.addEventListener('click', (e) => {
 });
 $('#cerrarP').addEventListener('click', cerrarPrompter);
 $('#rec').addEventListener('click', () => (GR.rec && GR.rec.state === 'recording' ? pararGrab() : empezarGrab()));
-$('#repetir').addEventListener('click', () => { GR.blob = null; $('#reloj').textContent = '0:00'; $('#texto').scrollTop = 0; modoPrompter('grabar'); });
+$('#repetir').addEventListener('click', () => { GR.blob = null; $('#reloj').textContent = '0:00'; $('#texto').scrollTop = 0; modoPrompter('grabar'); requestAnimationFrame(() => { ajustarZona(); enfocar(); }); });
 $('#enviar').addEventListener('click', enviarAudio);
-$('#arriba').addEventListener('click', () => ($('#texto').scrollTop = 0));
-$('#vel').addEventListener('input', (e) => guardar('dg-vel', e.target.value));
+$('#arriba').addEventListener('click', () => { $('#texto').scrollTop = 0; enfocar(); });
+const cambiarVel = (d) => { guardar('dg-vel', Math.max(1, Math.min(10, VEL() + d))); pintarVel(); };
+$('#velMenos').addEventListener('click', () => cambiarVel(-1));
+$('#velMas').addEventListener('click', () => cambiarVel(1));
+$('#texto').addEventListener('scroll', () => requestAnimationFrame(enfocar), {passive: true});
+addEventListener('resize', () => { if (!$('#prompter').classList.contains('oculto')) { ajustarZona(); enfocar(); } });
 $('#aislar').addEventListener('click', () => { if (GR.rec && GR.rec.state === 'recording') return aviso('Cámbialo antes de grabar'); guardar('dg-aislar', leer('dg-aislar') === '0' ? '1' : '0'); pintarAislar(); });
-const tamTexto = (d) => { const n = Math.max(20, Math.min(48, (+leer('dg-tam') || 30) + d)); guardar('dg-tam', n); $('#texto').style.setProperty('--tam', n + 'px'); };
+const tamTexto = (d) => { const n = Math.max(20, Math.min(48, (+leer('dg-tam') || 32) + d)); guardar('dg-tam', n); $('#texto').style.setProperty('--tam', n + 'px'); requestAnimationFrame(enfocar); };
 $('#menos').addEventListener('click', () => tamTexto(-2));
 $('#mas').addEventListener('click', () => tamTexto(2));
 $('#subirArchivo').addEventListener('click', () => $('#archivo').click());

@@ -228,30 +228,60 @@ nav .navrec.on .mic{box-shadow:0 6px 22px #ff2a4fbb,0 0 0 4px var(--fondo),0 0 0
 .gr-libre small{display:block;color:var(--suave);font-size:12px;margin-top:3px}
 .gr-libre-rec{width:54px;height:54px;border-radius:50%;background:#fff;display:grid;place-items:center;flex:none}
 .gr-libre-rec i{width:38px;height:38px;border-radius:50%;background:var(--rojo);display:block}
-#prompter{position:fixed;inset:0;height:100dvh;background:#000;display:flex;flex-direction:column;z-index:60;-webkit-user-select:none}
-#prompter .barra,#controles{flex:none}
-#prompter .barra{display:flex;align-items:center;gap:8px;padding:calc(var(--sa-top) + 8px) 12px 8px;background:#05070f;border-bottom:1px solid #1a2242}
-#prompter .barra .t{flex:1;font-size:13px;color:var(--suave);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pbtn{background:var(--capa2);border:1px solid var(--borde);border-radius:10px;padding:9px 12px;font-size:15px;font-weight:700;color:var(--texto)}
-#aislar.on{color:var(--verde)}
-#texto::before{content:'';display:block;height:22vh}
-#texto::after{content:'';display:block;height:55vh}
-#texto{flex:1 1 0;min-height:0;overflow-y:auto;padding:0 22px;font-size:var(--tam,30px);line-height:1.45;font-weight:600;color:#fff}
-#texto p{margin:0 0 1.1em}
-#texto strong{color:var(--oro)}
-#texto .pz1{color:#4d7bff;font-weight:800}
-#texto .pz2{display:block;height:.55em}
-#guia{position:fixed;left:0;right:0;top:calc(22vh + 60px);height:3px;background:#ff4d6d80;pointer-events:none;z-index:61}
-#controles{background:#05070f;border-top:1px solid #1a2242;padding:12px 14px calc(var(--sa-bot) + 12px)}
-#controles .fila,.gr-conf .fila{display:flex;gap:10px;align-items:center}
-#vel{flex:1;accent-color:var(--cian)}
-#rec{width:76px;height:76px;border-radius:50%;background:#fff;display:grid;place-items:center;flex:none;margin:0 auto}
-#rec i{display:block;width:56px;height:56px;border-radius:50%;background:var(--rojo);transition:all .2s}
-#rec.on i{width:28px;height:28px;border-radius:6px}
-#reloj{font-variant-numeric:tabular-nums;font-size:22px;font-weight:700;min-width:70px;text-align:center}
+#prompter{position:fixed;inset:0;height:100dvh;background:radial-gradient(120% 60% at 50% 0%,#0d1430,#03050b 60%);display:flex;flex-direction:column;z-index:60;-webkit-user-select:none}
+#prompter .barra,#controles,.pprog{flex:none}
+#prompter .barra{display:flex;align-items:center;gap:10px;padding:calc(var(--sa-top) + 8px) 12px 10px}
+.pinfo{flex:1;min-width:0}
+.pinfo .t{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
+.pchip{font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--cian)}
+.pchip.fut{color:var(--verde)}.pchip.lib{color:var(--rojo)}
+.ptam{display:flex;gap:6px}
+.pbtn{background:#ffffff0f;border:1px solid #ffffff1a;border-radius:12px;padding:9px 12px;font-size:14px;font-weight:700;color:var(--texto);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.pbtn.ico{min-width:42px;height:42px;padding:0 10px;display:inline-grid;place-items:center;font-size:17px}
+.pbtn.ico small{font-size:11px}
+.pprog{height:3px;margin:0 14px;border-radius:3px;background:#ffffff12;overflow:hidden}
+.pprog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cian),var(--violeta));transition:width .2s linear}
+.pzona{position:relative;flex:1 1 0;min-height:0}
+#texto{position:absolute;inset:0;overflow-y:auto;padding:0 26px 0 30px;font-size:var(--tam,32px);line-height:1.42;font-weight:700;letter-spacing:-.01em;color:#fff;scrollbar-width:none}
+#texto::-webkit-scrollbar{display:none}
+#texto::before{content:'';display:block;height:var(--pre,26vh)}
+#texto::after{content:'';display:block;height:75%}
+#texto p{margin:0 0 .9em;opacity:.28;transition:opacity .35s ease,transform .35s ease;transform-origin:left center}
+#texto p.leido{opacity:.12}
+#texto p.activo{opacity:1}
+#texto em{font-style:normal;color:var(--oro);text-shadow:0 0 18px #ffc40055}
+#texto .pzC{display:inline-block;width:.32em;height:.32em;margin:0 .12em .12em;border-radius:50%;background:#5b8cff;vertical-align:middle;opacity:.9}
+#texto .pzL{display:block;height:.7em;position:relative}
+#texto .pzL::after{content:'';position:absolute;left:0;top:.18em;width:1.6em;height:.2em;border-radius:.1em;background:linear-gradient(90deg,#5b8cff,transparent)}
+.pfade{position:absolute;left:0;right:0;pointer-events:none}
+.pfade.arriba{top:0;height:22%;background:linear-gradient(#03050b,#03050b00)}
+.pfade.abajo{bottom:0;height:30%;background:linear-gradient(#03050b00,#03050b)}
+#pPunto{position:absolute;left:10px;top:calc(30% + 2px);width:0;height:0;border-top:9px solid transparent;border-bottom:9px solid transparent;border-left:12px solid var(--rojo);opacity:.85;pointer-events:none}
+#prompter:not(.grabando) #pPunto{border-left-color:#ffffff55}
+#cuenta{position:fixed;inset:0;z-index:65;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#03050bcc;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);pointer-events:none}
+#cuenta b{font-size:140px;line-height:1;font-weight:900;color:#fff;animation:latido .8s ease}
+#cuenta span{color:var(--suave);font-weight:600;margin-top:8px}
+@keyframes latido{from{transform:scale(1.6);opacity:0}30%{opacity:1}to{transform:scale(1);opacity:1}}
+#controles{padding:10px 14px calc(var(--sa-bot) + 14px);background:linear-gradient(#03050b00,#03050b 30%)}
+.pctl{display:flex;align-items:center;gap:8px;justify-content:space-between}
+#aislar{font-size:13px;color:var(--suave)}
+#aislar.on{color:var(--verde);border-color:#2ee66b44;background:#2ee66b14}
+.pvel{display:flex;align-items:center;gap:8px}
+.pvel div{text-align:center;min-width:52px;line-height:1.05}
+.pvel b{font-size:20px;display:block}
+.pvel small{font-size:10px;color:var(--suave);text-transform:uppercase;letter-spacing:.06em}
+.precs{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;margin-top:14px}
+#reloj{font-variant-numeric:tabular-nums;font-size:22px;font-weight:800;color:var(--suave)}
 #reloj.on{color:var(--rojo)}
-#subirArchivo{min-width:70px}
-#escucha{width:100%;margin:6px 0 10px}
+#rec{width:80px;height:80px;border-radius:50%;background:#ffffff14;border:3px solid #fff;display:grid;place-items:center;transition:transform .15s}
+#rec i{display:block;width:60px;height:60px;border-radius:50%;background:var(--rojo);transition:all .25s ease;box-shadow:0 0 24px #ff4d6d66}
+#rec.on{animation:pulso 1.4s ease-in-out infinite}
+#rec.on i{width:30px;height:30px;border-radius:8px}
+@keyframes pulso{0%,100%{box-shadow:0 0 0 0 #ff4d6d55}50%{box-shadow:0 0 0 14px #ff4d6d00}}
+#subirArchivo{justify-self:end;font-size:13px}
+.prev-tit{text-align:center;font-weight:700;color:var(--verde);margin-bottom:6px}
+#escucha{width:100%;margin:4px 0 12px}
+.pbotones{display:grid;grid-template-columns:1fr 2fr;gap:10px}
 #confirmar{position:fixed;inset:0;z-index:80;background:#000a;display:grid;place-items:center;padding:20px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .gr-conf{width:100%;max-width:360px;background:var(--capa2);border:1px solid var(--borde);border-radius:22px;padding:22px;text-align:center}
 .gr-conf-dato{margin-top:10px;padding:10px;border-radius:12px;background:#ffffff0d;font-weight:600}
@@ -293,21 +323,34 @@ nav .navrec.on .mic{box-shadow:0 6px 22px #ff2a4fbb,0 0 0 4px var(--fondo),0 0 0
 <!-- Grabar: teleprompter a pantalla completa -->
 <div id="prompter" class="oculto">
   <div class="barra">
-    <button class="pbtn" id="cerrarP" aria-label="Cerrar">✕</button>
-    <div class="t" id="pTitulo"></div>
-    <button class="pbtn" id="menos">A−</button><button class="pbtn" id="mas">A+</button>
+    <button class="pbtn ico" id="cerrarP" aria-label="Cerrar">✕</button>
+    <div class="pinfo"><span class="pchip" id="pCanal"></span><div class="t" id="pTitulo"></div></div>
+    <div class="ptam"><button class="pbtn ico" id="menos" aria-label="Letra más pequeña">A<small>−</small></button><button class="pbtn ico" id="mas" aria-label="Letra más grande">A<small>+</small></button></div>
   </div>
-  <div id="texto"></div>
-  <div id="guia"></div>
+  <div class="pprog"><i id="pProg"></i></div>
+  <div class="pzona">
+    <div id="texto"></div>
+    <div class="pfade arriba"></div><div class="pfade abajo"></div>
+    <div id="pPunto" aria-hidden="true"></div>
+  </div>
+  <div id="cuenta" class="oculto"></div>
   <div id="controles">
     <div id="modoGrabar">
-      <div class="fila"><span class="hoy-sub">Avance</span><input type="range" id="vel" min="0" max="10" step="1" value="3"><button class="pbtn" id="arriba" aria-label="Al inicio">⤒</button></div>
-      <div class="fila" style="margin-top:10px"><div id="reloj">0:00</div><button id="rec" aria-label="Grabar"><i></i></button><button class="pbtn" id="subirArchivo">📎 Archivo</button></div>
-      <button class="pbtn" id="aislar" style="width:100%;margin-top:10px"></button>
+      <div class="pctl">
+        <button class="pbtn" id="aislar"></button>
+        <div class="pvel"><button class="pbtn ico" id="velMenos" aria-label="Más lento">−</button><div><b id="velTxt">3</b><small>velocidad</small></div><button class="pbtn ico" id="velMas" aria-label="Más rápido">+</button></div>
+        <button class="pbtn ico" id="arriba" aria-label="Volver al inicio">⤒</button>
+      </div>
+      <div class="precs">
+        <div id="reloj">0:00</div>
+        <button id="rec" aria-label="Grabar"><i></i></button>
+        <button class="pbtn" id="subirArchivo">📎 <span>Archivo</span></button>
+      </div>
     </div>
     <div id="modoRevisar" class="oculto">
+      <div class="prev-tit">✔ Grabado · escúchalo antes de enviar</div>
       <audio id="escucha" controls playsinline></audio>
-      <div class="fila"><button class="btn sec" id="repetir" style="flex:1">↺ Repetir</button><button class="btn" id="enviar" style="flex:2;background:var(--verde)">Enviar a la PC ➜</button></div>
+      <div class="pbotones"><button class="btn sec" id="repetir">↺ Repetir</button><button class="btn" id="enviar" style="background:var(--verde)">Enviar a la PC ➜</button></div>
     </div>
   </div>
 </div>
