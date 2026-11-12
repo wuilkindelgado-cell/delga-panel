@@ -73,7 +73,12 @@ function avanzar() {
 // ---------- grabación ----------
 async function empezar() {
   try {
-    const flujo = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1}});
+    // Aislamiento de ruido (por defecto ON): usa el procesamiento de voz del iPhone (supresión de ruido + eco).
+    // voiceIsolation es una restricción nueva; los navegadores que no la conocen la ignoran.
+    const aislar = leer('dg-aislar') !== '0';
+    const flujo = await navigator.mediaDevices.getUserMedia({audio: aislar
+      ? {noiseSuppression: true, echoCancellation: true, autoGainControl: true, voiceIsolation: true, channelCount: 1}
+      : {noiseSuppression: false, echoCancellation: false, autoGainControl: false, channelCount: 1}});
     const tipo = MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : (MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : '');
     ext = tipo.startsWith('audio/mp4') ? 'm4a' : 'webm';
     grabadora = new MediaRecorder(flujo, tipo ? {mimeType: tipo, audioBitsPerSecond: 192000} : undefined);
@@ -137,6 +142,9 @@ $('#rec').addEventListener('click', () => (grabadora && grabadora.state === 'rec
 $('#repetir').addEventListener('click', () => { blob = null; $('#reloj').textContent = '0:00'; $('#texto').scrollTop = 0; modo('grabar'); });
 $('#enviar').addEventListener('click', () => blob && enviar(blob, ext));
 $('#arriba').addEventListener('click', () => ($('#texto').scrollTop = 0));
+const pintarAislar = () => { const on = leer('dg-aislar') !== '0'; const b = $('#aislar'); b.textContent = on ? '🎧 Aislar ruido: SÍ' : '🎙️ Aislar ruido: NO (sonido natural)'; b.style.color = on ? 'var(--verde)' : 'var(--suave)'; };
+$('#aislar').addEventListener('click', () => { if (grabadora && grabadora.state === 'recording') return toast('Cámbialo antes de grabar'); guardar('dg-aislar', leer('dg-aislar') === '0' ? '1' : '0'); pintarAislar(); });
+pintarAislar();
 $('#vel').addEventListener('input', (e) => guardar('dg-vel', e.target.value));
 const tam = (d) => { const n = Math.max(20, Math.min(48, (+leer('dg-tam') || 30) + d)); guardar('dg-tam', n); $('#texto').style.setProperty('--tam', n + 'px'); };
 $('#menos').addEventListener('click', () => tam(-2));
