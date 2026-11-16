@@ -3,7 +3,7 @@
 // El acceso al buzón viene dentro de los datos cifrados del panel (D.buzon); no hay que pegar nada.
 
 const BUZON = 'https://api.github.com/repos/wuilkindelgado-cell/delga-buzon/contents';
-const GR = {lista: JSON.parse(leer('dg-cache') || '[]'), cargado: 0, cargando: false, error: '', actual: null, rec: null, trozos: [], blob: null, ext: 'm4a', t0: 0, reloj: 0, scroll: 0, wake: null, enviados: JSON.parse(leer('dg-enviados') || '[]'), estado: JSON.parse(leer('dg-estado') || '{}'), marcas: [], aprobados: JSON.parse(leer('dg-aprobados') || '{}'), respondidos: JSON.parse(leer('dg-respondidos') || '[]')};
+const GR = {lista: JSON.parse(leer('dg-cache') || '[]'), cargado: 0, cargando: false, error: '', actual: null, rec: null, trozos: [], blob: null, ext: 'm4a', t0: 0, reloj: 0, scroll: 0, wake: null, enviados: JSON.parse(leer('dg-enviados') || '[]'), estado: JSON.parse(leer('dg-estado') || '{}'), recos: JSON.parse(leer('dg-recos') || '[]'), marcas: [], aprobados: JSON.parse(leer('dg-aprobados') || '{}'), respondidos: JSON.parse(leer('dg-respondidos') || '[]')};
 const VAPID = 'BMQ6X6qVurcA9SmwWvsxYfCHCaXZ6KTbkeVmF_jOo-741TbSlq6cY-ByzAiEN2LYG49K3D0hZ8DlIaVMaMx9ym4';
 const tokenBuzon = () => (D && D.buzon) || leer('dg-token');
 const hdr = (extra = {}) => ({Authorization: `Bearer ${tokenBuzon()}`, Accept: 'application/vnd.github+json', ...extra});
@@ -19,6 +19,8 @@ async function cargarGuiones(forzar) {
     guardar('dg-cache', JSON.stringify(GR.lista));
     const r2 = await fetch(`${BUZON}/estado.json?t=${Date.now()}`, {headers: hdr({Accept: 'application/vnd.github.raw'}), cache: 'no-store'});
     if (r2.ok) { GR.estado = await r2.json(); guardar('dg-estado', JSON.stringify(GR.estado)); }
+    const r3 = await fetch(`${BUZON}/recomendaciones.json?t=${Date.now()}`, {headers: hdr({Accept: 'application/vnd.github.raw'}), cache: 'no-store'});
+    if (r3.ok) { GR.recos = (await r3.json()).recomendaciones || []; guardar('dg-recos', JSON.stringify(GR.recos)); }
     GR.error = ''; GR.cargado = Date.now();
   } catch (e) { GR.error = 'red'; }
   GR.cargando = false;
@@ -52,6 +54,7 @@ function vGrabar() {
       </button>`;
     }).join('');
   }
+  h += tarjetaRecos();
   h += `<button class="gr-libre" id="grLibre"><span class="gr-libre-rec"><i></i></span><span><b>Grabar sin guion</b><small>Va a la carpeta _entrada de la PC</small></span></button>`;
   h += `<button class="btn sec" id="grSuelto" style="width:100%;margin-bottom:14px">📎 Subir un audio de Notas de Voz</button>`;
   h += tarjetaIdea();
@@ -586,3 +589,28 @@ async function enviarIdea() {
     pintar();
   } catch (e) { aviso('✖ No se pudo enviar (' + e.message + ')', 4000); }
 }
+
+
+// ================================================================== TE RECOMIENDO (Claude elige el tema y deja el guion listo)
+function tarjetaRecos() {
+  const lista = GR.recos || [];
+  if (!lista.length) return '';
+  return `<div class="card gr-recos"><h3>🤖 Te recomiendo <small>guiones listos de Claude</small></h3>
+    ${lista.map((g, i) => {
+      const fut = g.canal === 'Delgafutbol';
+      return `<div class="gr-reco ${fut ? 'fut' : 'tec'}">
+        <span class="gr-chip">${fut ? '⚽' : '⚡'} ${esc(g.canal)}</span>
+        <b>${esc(g.tema)}</b>
+        <div class="gr-reco-gancho">«${esc((g.lineas[0] || '').replace(/\*\*|\/+/g, '').replace(/\s+/g, ' ').trim())}»</div>
+        ${g.porque ? `<div class="gr-reco-porque">💡 ${esc(g.porque)}</div>` : ''}
+        <button class="btn" data-reco="${i}" style="width:100%;margin-top:10px;background:var(--rojo)">🎙️ Grabar este</button>
+      </div>`;
+    }).join('')}
+    <div class="hoy-sub" style="margin-top:8px">Las renuevo cada vez que trabajamos. Si prefieres otro tema, usa «Pedir un guion».</div></div>`;
+}
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('[data-reco]');
+  if (!t) return;
+  const g = GR.recos[+t.dataset.reco];
+  if (g) abrirPrompter(g);
+});

@@ -224,6 +224,13 @@ def _subir_previas(items: list[dict], est: dict) -> None:
 def _destino_audio(nombre: str) -> tuple[Path, str]:
     destino_id, _, resto = nombre.partition("@@")
     carpeta = VIDEOS / destino_id.replace("__", "/")
+    rel = destino_id.replace("__", "/")
+    if rel.startswith("_sugeridos/") and carpeta.is_dir():  # recomendación elegida: pasa a producción
+        final = VIDEOS / rel.split("/", 1)[1]
+        if not final.exists():
+            final.parent.mkdir(parents=True, exist_ok=True)
+            carpeta.rename(final)
+        carpeta = final
     if not resto or not carpeta.is_dir():
         carpeta = VIDEOS / "_entrada"
         carpeta.mkdir(exist_ok=True)
@@ -295,6 +302,30 @@ def recoger(est: dict) -> list[Path]:
         _registrar_audio(destino, tema, est)
     est["ultimo_audio"] = datetime.now().isoformat(timespec="minutes") if bajados else est.get("ultimo_audio")
     return bajados
+
+
+# ------------------------------------------------------------------ recomendaciones de Claude (Videos/_sugeridos/<Cat>/<NN-tema>/)
+SUGERIDOS = VIDEOS / "_sugeridos"
+
+
+def recomendaciones() -> list[dict]:
+    out = []
+    if not SUGERIDOS.exists():
+        return out
+    for cat, canal in CATEGORIAS.items():
+        base = SUGERIDOS / cat
+        if not base.exists():
+            continue
+        for d in sorted(base.iterdir()):
+            md = d / "guion-grabacion.md"
+            if not d.is_dir() or not md.exists():
+                continue
+            texto = md.read_text(encoding="utf-8")
+            g = _leer_guion(md)
+            m = re.search(r"\*\*Por qué te lo recomiendo:\*\*\s*(.+)", texto)
+            out.append({"id": f"_sugeridos/{cat}/{d.name}", "canal": canal, **g, "porque": m.group(1).strip() if m else "",
+                        "fecha": datetime.fromtimestamp(md.stat().st_mtime).isoformat(timespec="minutes")})
+    return out
 
 
 # ------------------------------------------------------------------ ideas («pedir guion» desde el celular)
@@ -476,6 +507,10 @@ def ciclo() -> None:
             avisar("📝 Guion nuevo para grabar", g["tema"], "#grabar", est)
     est["guiones_vistos"] = sorted(conocidos | {g["id"] for g in gs})
     publicar_guiones(gs)
+    recos = recomendaciones()
+    anterior_r = _leer("recomendaciones.json") or {}
+    if anterior_r.get("recomendaciones") != recos:
+        _poner_json("recomendaciones.json", {"generado": datetime.now().isoformat(timespec="seconds"), "recomendaciones": recos}, "Recomendaciones de Claude", anterior=False)
     prod = produccion()
     _subir_previas(prod, est)
     anterior = _leer("estado.json") or {}
