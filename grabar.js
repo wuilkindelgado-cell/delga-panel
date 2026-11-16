@@ -444,7 +444,7 @@ function medidor(flujo) {
       const nivel = Math.max(0, Math.min(1, (db + 60) / 50));
       const m = $('#nivel i'), txt = $('#nivelTxt');
       if (m) { m.style.width = (nivel * 100).toFixed(0) + '%'; m.style.background = pico > 0.97 ? 'var(--rojo)' : db < -42 ? 'var(--oro)' : 'var(--verde)'; }
-      if (GR.rec && GR.rec.state === 'recording') {
+      if ((GR.rec && GR.rec.state === 'recording') || (GR.recF && GR.recF.state === 'recording')) {
         bajo = db < -45 ? bajo + 1 : Math.max(0, bajo - 2);
         if (txt) txt.textContent = pico > 0.97 ? 'Muy fuerte · aléjate un poco' : bajo > 90 ? 'Muy bajo · acércate al micrófono' : 'Volumen bien';
         if (bajo > 90 && Date.now() - aviso1 > 15000) { aviso1 = Date.now(); if (navigator.vibrate) navigator.vibrate(30); }
