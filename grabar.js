@@ -115,7 +115,8 @@ function avanzarTexto() {
   const paso = (ahora) => { $('#texto').scrollTop += VEL() * 9 * ((ahora - ult) / 1000); ult = ahora; enfocar(); GR.scroll = requestAnimationFrame(paso); };
   GR.scroll = requestAnimationFrame(paso);
 }
-const pintarAislar = () => { const on = leer('dg-aislar') !== '0'; const b = $('#aislar'); b.innerHTML = on ? '🎧 <span>Sin ruido</span>' : '🎙️ <span>Natural</span>'; b.classList.toggle('on', on); };
+const filtroIphone = () => leer('dg-filtro') === '1';
+const pintarAislar = () => { const on = filtroIphone(); const b = $('#aislar'); b.innerHTML = on ? '📞 <span>Filtro iPhone</span>' : '🎙️ <span>Calidad estudio</span>'; b.classList.toggle('on', !on); };
 
 async function cuentaAtras() {
   GR.cancelarCuenta = false;
@@ -132,10 +133,11 @@ async function cuentaAtras() {
 async function empezarGrab() {
   if (GR.contando) return;
   try {
-    const aislar = leer('dg-aislar') !== '0';
+    const aislar = filtroIphone();
     const flujo = await navigator.mediaDevices.getUserMedia({audio: aislar
       ? {noiseSuppression: true, echoCancellation: true, autoGainControl: true, voiceIsolation: true, channelCount: 1}
-      : {noiseSuppression: false, echoCancellation: false, autoGainControl: false, channelCount: 1}});
+      : {noiseSuppression: false, echoCancellation: false, autoGainControl: false, channelCount: 1, sampleRate: 48000, sampleSize: 24}});
+    medidor(flujo);
     $('#texto').scrollTop = 0; enfocar();
     GR.contando = true;
     const seguir = await cuentaAtras();
@@ -143,7 +145,7 @@ async function empezarGrab() {
     if (!seguir) { flujo.getTracks().forEach((t) => t.stop()); return; }
     const tipo = MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : (MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : '');
     GR.ext = tipo.startsWith('audio/mp4') ? 'm4a' : 'webm';
-    GR.rec = new MediaRecorder(flujo, tipo ? {mimeType: tipo, audioBitsPerSecond: 192000} : undefined);
+    GR.rec = new MediaRecorder(flujo, tipo ? {mimeType: tipo, audioBitsPerSecond: 256000} : undefined);
     GR.trozos = [];
     GR.rec.ondataavailable = (e) => e.data.size && GR.trozos.push(e.data);
     GR.rec.onstop = () => {
@@ -171,7 +173,7 @@ async function empezarGrab() {
   }
 }
 function pararGrab(descartar = false) {
-  clearInterval(GR.reloj); cancelAnimationFrame(GR.scroll);
+  clearInterval(GR.reloj); cancelAnimationFrame(GR.scroll); pararMedidor();
   $('#rec').classList.remove('on'); $('#reloj').classList.remove('on');
   if (GR.rec && GR.rec.state !== 'inactive') { GR.rec._descartar = descartar; GR.rec.stop(); }
   soltarPant();
@@ -236,7 +238,7 @@ $('#velMenos').addEventListener('click', () => cambiarVel(-1));
 $('#velMas').addEventListener('click', () => cambiarVel(1));
 $('#texto').addEventListener('scroll', () => requestAnimationFrame(enfocar), {passive: true});
 addEventListener('resize', () => { if (!$('#prompter').classList.contains('oculto')) { ajustarZona(); enfocar(); } });
-$('#aislar').addEventListener('click', () => { if (GR.rec && GR.rec.state === 'recording') return aviso('Cámbialo antes de grabar'); guardar('dg-aislar', leer('dg-aislar') === '0' ? '1' : '0'); pintarAislar(); });
+$('#aislar').addEventListener('click', () => { if (GR.rec && GR.rec.state === 'recording') return aviso('Cámbialo antes de grabar'); guardar('dg-filtro', filtroIphone() ? '0' : '1'); pintarAislar(); aviso(filtroIphone() ? '📞 Filtro del iPhone: quita ruido pero apaga la voz (suena a llamada)' : '🎙️ Calidad estudio: voz clara; el ruido lo limpio en la PC', 3500); });
 const tamTexto = (d) => { const n = Math.max(20, Math.min(48, (+leer('dg-tam') || 32) + d)); guardar('dg-tam', n); $('#texto').style.setProperty('--tam', n + 'px'); requestAnimationFrame(enfocar); };
 $('#menos').addEventListener('click', () => tamTexto(-2));
 $('#mas').addEventListener('click', () => tamTexto(2));
@@ -417,3 +419,34 @@ document.addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.dataset && e.target.dataset.resp) enviarRespuesta(e.target.dataset.resp); });
 
 marcarPendientes();
+
+
+// ================================================================== MEDIDOR DE VOLUMEN (en vivo)
+// Verde = bien · amarillo = muy bajo (acércate) · rojo = satura (aléjate un poco).
+function medidor(flujo) {
+  pararMedidor();
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const an = ctx.createAnalyser(); an.fftSize = 1024;
+    ctx.createMediaStreamSource(flujo).connect(an);
+    const buf = new Float32Array(an.fftSize);
+    let bajo = 0, aviso1 = 0;
+    const paso = () => {
+      an.getFloatTimeDomainData(buf);
+      let pico = 0, sum = 0;
+      for (const x of buf) { const a = Math.abs(x); if (a > pico) pico = a; sum += x * x; }
+      const db = 20 * Math.log10(Math.sqrt(sum / buf.length) + 1e-9);
+      const nivel = Math.max(0, Math.min(1, (db + 60) / 50));
+      const m = $('#nivel i'), txt = $('#nivelTxt');
+      if (m) { m.style.width = (nivel * 100).toFixed(0) + '%'; m.style.background = pico > 0.97 ? 'var(--rojo)' : db < -42 ? 'var(--oro)' : 'var(--verde)'; }
+      if (GR.rec && GR.rec.state === 'recording') {
+        bajo = db < -45 ? bajo + 1 : Math.max(0, bajo - 2);
+        if (txt) txt.textContent = pico > 0.97 ? 'Muy fuerte · aléjate un poco' : bajo > 90 ? 'Muy bajo · acércate al micrófono' : 'Volumen bien';
+        if (bajo > 90 && Date.now() - aviso1 > 15000) { aviso1 = Date.now(); if (navigator.vibrate) navigator.vibrate(30); }
+      } else if (txt) txt.textContent = 'Prueba: habla y mira la barra';
+      GR.medidorId = requestAnimationFrame(paso);
+    };
+    GR.medidorCtx = ctx; paso();
+  } catch (e) {}
+}
+function pararMedidor() { cancelAnimationFrame(GR.medidorId); try { GR.medidorCtx && GR.medidorCtx.close(); } catch (e) {} GR.medidorCtx = null; const m = $('#nivel i'); if (m) m.style.width = '0%'; }
