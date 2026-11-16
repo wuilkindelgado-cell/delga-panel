@@ -267,6 +267,21 @@ nav .navrec.on .mic{box-shadow:0 6px 22px #ff2a4fbb,0 0 0 4px var(--fondo),0 0 0
 #nivel{flex:1;height:8px;border-radius:8px;background:#ffffff12;overflow:hidden}
 #nivel i{display:block;height:100%;width:0;border-radius:8px;background:var(--verde);transition:width .08s linear}
 #nivelTxt{font-size:12px;color:var(--suave);min-width:150px;text-align:right}
+.pmodos{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;background:#ffffff0a;border-radius:12px;padding:4px}
+.pmodos button{padding:8px;border-radius:9px;font-size:13px;font-weight:700;color:var(--suave)}
+.pmodos button.on{background:var(--capa3);color:var(--texto)}
+#prompter.frases .pvel,#prompter.frases #arriba{display:none}
+#prompter.frases #texto p{transition:opacity .3s}
+#prompter.grabando .pmodos{opacity:.35;pointer-events:none}
+.fbotones{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:8px}
+#fLista{max-height:34vh;overflow-y:auto;margin:6px 0 12px}
+.ffila{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #ffffff12;font-size:13px}
+.ffila span{flex:1;color:var(--suave);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ffila b{width:22px;color:var(--verde)}
+.ffila .pbtn{padding:6px 10px;font-size:13px}
+.gr-idea textarea{width:100%;box-sizing:border-box;background:var(--capa2);color:var(--texto);border:1px solid var(--borde);border-radius:12px;padding:12px;font:inherit;resize:vertical}
+.gr-idea .fila{display:flex;gap:8px;margin-top:8px}
+.gr-idea select{flex:1;background:var(--capa2);color:var(--texto);border:1px solid var(--borde);border-radius:12px;padding:10px;font:inherit}
 #prompter{position:fixed;inset:0;height:100dvh;background:radial-gradient(120% 60% at 50% 0%,#0d1430,#03050b 60%);display:flex;flex-direction:column;z-index:60;-webkit-user-select:none}
 #prompter .barra,#controles,.pprog{flex:none}
 #prompter .barra{display:flex;align-items:center;gap:10px;padding:calc(var(--sa-top) + 8px) 12px 10px}
@@ -377,6 +392,7 @@ nav .navrec.on .mic{box-shadow:0 6px 22px #ff2a4fbb,0 0 0 4px var(--fondo),0 0 0
   <div id="cuenta" class="oculto"></div>
   <div id="controles">
     <div id="modoGrabar">
+      <div class="pmodos"><button data-pmodo="seguido">📜 Seguido</button><button data-pmodo="frases">🧩 Por frases</button></div>
       <div class="pctl">
         <button class="pbtn" id="aislar"></button>
         <div class="pvel"><button class="pbtn ico" id="velMenos" aria-label="Más lento">−</button><div><b id="velTxt">3</b><small>velocidad</small></div><button class="pbtn ico" id="velMas" aria-label="Más rápido">+</button></div>
@@ -388,6 +404,15 @@ nav .navrec.on .mic{box-shadow:0 6px 22px #ff2a4fbb,0 0 0 4px var(--fondo),0 0 0
         <button id="rec" aria-label="Grabar"><i></i></button>
         <div class="pder"><button class="pbtn" id="subirArchivo">📎 <span>Archivo</span></button><button class="pbtn" id="corte" aria-label="Me equivoqué">✂ <span>Error</span> <i id="corteN">0</i></button></div>
       </div>
+    </div>
+    <div id="fBar" class="oculto">
+      <div class="prev-tit" id="fInfo"></div>
+      <div class="fbotones"><button class="btn sec" id="fEsc">▶ Escuchar</button><button class="btn sec" id="fRep">↺ Repetir</button><button class="btn" id="fSig" style="background:var(--verde)">Siguiente ➜</button></div>
+    </div>
+    <div id="modoFrasesFin" class="oculto">
+      <div class="prev-tit">✔ Todas las frases grabadas · revisa y envía</div>
+      <div id="fLista"></div>
+      <div class="pbotones"><button class="btn sec" id="fDeNuevo">↺ De nuevo</button><button class="btn" id="fEnviar" style="background:var(--verde)">Enviar a la PC ➜</button></div>
     </div>
     <div id="modoRevisar" class="oculto">
       <div class="prev-tit">✔ Grabado · escúchalo antes de enviar</div>

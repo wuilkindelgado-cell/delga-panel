@@ -23,7 +23,7 @@ async function cargarGuiones(forzar) {
   } catch (e) { GR.error = 'red'; }
   GR.cargando = false;
   marcarPendientes();
-  if ((E.tab === 'grabar' || E.tab === 'inicio') && $('#prompter').classList.contains('oculto') && !$('#hoja').classList.contains('on')) pintar();
+  if ((E.tab === 'grabar' || E.tab === 'inicio') && $('#prompter').classList.contains('oculto') && !$('#hoja').classList.contains('on') && document.activeElement?.id !== 'ideaTxt' && !($('#ideaTxt')?.value)) pintar();
 }
 function marcarPendientes() {
   const b = $('nav .navrec .burbuja');
@@ -54,6 +54,7 @@ function vGrabar() {
   }
   h += `<button class="gr-libre" id="grLibre"><span class="gr-libre-rec"><i></i></span><span><b>Grabar sin guion</b><small>Va a la carpeta _entrada de la PC</small></span></button>`;
   h += `<button class="btn sec" id="grSuelto" style="width:100%;margin-bottom:14px">📎 Subir un audio de Notas de Voz</button>`;
+  h += tarjetaIdea();
   h += tableroProduccion();
   if (GR.enviados.length) h += `<div class="card"><h3>📤 Enviados</h3>${GR.enviados.slice(0, 5).map((x) => `<div class="hoy-fila"><span>${esc(x.tema)}</span><span class="hoy-sub">${hace(x.cuando)}</span></div>`).join('')}<div class="hoy-sub" style="margin-top:8px">La PC los baja a su carpeta en ≤ 3 min.</div></div>`;
   return h;
@@ -84,19 +85,23 @@ function abrirPrompter(g) {
   modoPrompter('grabar');
   $('#prompter').classList.remove('oculto', 'grabando');
   document.body.style.overflow = 'hidden';
-  requestAnimationFrame(() => { ajustarZona(); enfocar(); });
+  requestAnimationFrame(() => { ajustarZona(); setModoP(leer('dg-pmodo') || 'seguido'); });
 }
 function cerrarPrompter() {
   if (GR.rec && GR.rec.state === 'recording') { if (!confirm('¿Descartar la grabación en curso?')) return; pararGrab(true); }
+  if (GR.recF && GR.recF.state === 'recording') { GR.recF._descartar = true; GR.recF.stop(); }
+  if (GR.frases && GR.frases.length && !confirm('¿Salir? Se pierden las frases grabadas.')) return;
+  soltarFlujo();
   GR.cancelarCuenta = true;
   $('#prompter').classList.add('oculto');
   document.body.style.overflow = '';
   soltarPant();
 }
-function modoPrompter(m) { $('#modoGrabar').classList.toggle('oculto', m !== 'grabar'); $('#modoRevisar').classList.toggle('oculto', m !== 'revisar'); }
+function modoPrompter(m) { $('#modoGrabar').classList.toggle('oculto', m !== 'grabar'); $('#modoRevisar').classList.toggle('oculto', m !== 'revisar'); $('#modoFrasesFin').classList.toggle('oculto', m !== 'frasesFin'); $('#fBar').classList.add('oculto'); $('.precs').classList.remove('oculto'); }
 // La línea de lectura está al 30 % de la zona de texto; el relleno superior hace que el primer párrafo arranque ahí.
 function ajustarZona() { const z = $('#texto'); z.style.setProperty('--pre', Math.round(z.clientHeight * 0.3) + 'px'); }
 function enfocar() {
+  if (enFrases()) return marcarFrase(false);
   const z = $('#texto'); const caja = z.getBoundingClientRect(); const y = caja.top + caja.height * 0.3 + 10;
   let activo = null;
   for (const p of z.children) {
@@ -229,7 +234,7 @@ document.addEventListener('click', (e) => {
   abrirPrompter(GR.lista[+t.dataset.guion]);
 });
 $('#cerrarP').addEventListener('click', cerrarPrompter);
-$('#rec').addEventListener('click', () => (GR.rec && GR.rec.state === 'recording' ? pararGrab() : empezarGrab()));
+$('#rec').addEventListener('click', () => (enFrases() ? grabarFrase() : GR.rec && GR.rec.state === 'recording' ? pararGrab() : empezarGrab()));
 $('#repetir').addEventListener('click', () => { GR.blob = null; $('#reloj').textContent = '0:00'; $('#texto').scrollTop = 0; modoPrompter('grabar'); requestAnimationFrame(() => { ajustarZona(); enfocar(); }); });
 $('#enviar').addEventListener('click', enviarAudio);
 $('#arriba').addEventListener('click', () => { $('#texto').scrollTop = 0; enfocar(); });
@@ -450,3 +455,134 @@ function medidor(flujo) {
   } catch (e) {}
 }
 function pararMedidor() { cancelAnimationFrame(GR.medidorId); try { GR.medidorCtx && GR.medidorCtx.close(); } catch (e) {} GR.medidorCtx = null; const m = $('#nivel i'); if (m) m.style.width = '0%'; }
+
+
+// ================================================================== GRABAR POR FRASES
+// Cada frase en su archivo: si una sale mal se repite solo esa. La PC las une (buzon._unir_frases).
+const enFrases = () => GR.modoP === 'frases' && !!GR.actual;
+function setModoP(m) {
+  if (!GR.actual) m = 'seguido';
+  GR.modoP = m; if (GR.actual) guardar('dg-pmodo', m);
+  document.querySelectorAll('[data-pmodo]').forEach((b) => b.classList.toggle('on', b.dataset.pmodo === m));
+  $('#prompter').classList.toggle('frases', m === 'frases');
+  GR.frases = []; GR.fi = 0; GR.volverFin = false;
+  modoPrompter('grabar');
+  $('#reloj').textContent = m === 'frases' ? `Frase 1/${$('#texto').children.length}` : '0:00';
+  $('#texto').scrollTop = 0;
+  requestAnimationFrame(() => (m === 'frases' ? marcarFrase(true) : enfocar()));
+}
+function marcarFrase(mover) {
+  const ps = [...$('#texto').children], z = $('#texto');
+  ps.forEach((p, k) => { p.className = k < GR.fi ? 'leido' : k === GR.fi ? 'activo' : ''; });
+  const p = ps[GR.fi];
+  if (p && mover) z.scrollTo({top: Math.max(0, p.offsetTop - z.clientHeight * 0.3 + 6), behavior: 'smooth'});
+  $('#pProg').style.width = (ps.length ? (GR.fi / ps.length) * 100 : 0) + '%';
+}
+async function flujoFrases() {
+  if (GR.flujoF && GR.flujoF.active) return GR.flujoF;
+  const aislar = filtroIphone();
+  GR.flujoF = await navigator.mediaDevices.getUserMedia({audio: aislar
+    ? {noiseSuppression: true, echoCancellation: true, autoGainControl: true, voiceIsolation: true, channelCount: 1}
+    : {noiseSuppression: false, echoCancellation: false, autoGainControl: false, channelCount: 1, sampleRate: 48000, sampleSize: 24}});
+  medidor(GR.flujoF);
+  return GR.flujoF;
+}
+function soltarFlujo() { try { GR.flujoF && GR.flujoF.getTracks().forEach((x) => x.stop()); } catch (e) {} GR.flujoF = null; pararMedidor(); }
+async function grabarFrase() {
+  if (GR.recF && GR.recF.state === 'recording') { GR.recF.stop(); return; }
+  if (GR.contando) return;
+  try {
+    const flujo = await flujoFrases();
+    if (!GR.frases.some(Boolean)) { GR.contando = true; const ok = await cuentaAtras(); GR.contando = false; if (!ok) return; }
+    const tipo = MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : (MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : '');
+    GR.ext = tipo.startsWith('audio/mp4') ? 'm4a' : 'webm';
+    const rec = new MediaRecorder(flujo, tipo ? {mimeType: tipo, audioBitsPerSecond: 256000} : undefined);
+    const trozos = []; const i = GR.fi; const t0 = Date.now();
+    rec.ondataavailable = (e) => e.data.size && trozos.push(e.data);
+    rec.onstop = () => {
+      clearInterval(GR.reloj);
+      $('#rec').classList.remove('on'); $('#reloj').classList.remove('on'); $('#prompter').classList.remove('grabando');
+      if (rec._descartar) return;
+      GR.frases[i] = {blob: new Blob(trozos, {type: rec.mimeType || 'audio/mp4'}), dur: (Date.now() - t0) / 1000};
+      const n = $('#texto').children.length;
+      $('#fInfo').textContent = `✔ Frase ${i + 1} de ${n} · ${GR.frases[i].dur.toFixed(1)} s`;
+      $('#fSig').textContent = GR.volverFin || i + 1 >= n ? '✔ Terminar' : 'Siguiente ➜';
+      $('.precs').classList.add('oculto'); $('#fBar').classList.remove('oculto');
+    };
+    GR.recF = rec; rec.start(500);
+    $('#rec').classList.add('on'); $('#reloj').classList.add('on'); $('#prompter').classList.add('grabando');
+    GR.reloj = setInterval(() => { $('#reloj').textContent = `Frase ${i + 1} · ${((Date.now() - t0) / 1000).toFixed(0)} s`; }, 250);
+    try { GR.wake = GR.wake || await navigator.wakeLock?.request('screen'); } catch (e) {}
+  } catch (e) { GR.contando = false; aviso('🎙️ No pude usar el micrófono (' + ((e && e.name) || 'error') + ')', 5000); }
+}
+function siguienteFrase() {
+  const n = $('#texto').children.length;
+  $('#fBar').classList.add('oculto'); $('.precs').classList.remove('oculto');
+  if (GR.volverFin || GR.fi + 1 >= n) { GR.volverFin = false; return mostrarFin(); }
+  GR.fi++; $('#reloj').textContent = `Frase ${GR.fi + 1}/${n}`; marcarFrase(true);
+}
+function mostrarFin() {
+  const ps = [...$('#texto').children];
+  $('#fLista').innerHTML = ps.map((p, k) => `<div class="ffila"><b>${GR.frases[k] ? '✔' : '·'}</b><span>${k + 1}. ${esc(p.textContent.trim())}</span>
+    <button class="pbtn" data-fplay="${k}">▶</button><button class="pbtn" data-frep="${k}">↺</button></div>`).join('');
+  $('#pProg').style.width = '100%';
+  modoPrompter('frasesFin');
+}
+const tocar = (b) => { try { GR.audioF && GR.audioF.pause(); GR.audioF = new Audio(URL.createObjectURL(b)); GR.audioF.play(); } catch (e) {} };
+async function enviarFrases() {
+  const n = $('#texto').children.length;
+  const faltan = [...Array(n).keys()].filter((k) => !GR.frases[k]);
+  if (faltan.length) return aviso(`Faltan las frases ${faltan.map((k) => k + 1).join(', ')}`, 3500);
+  const total = GR.frases.reduce((s, f) => s + f.dur, 0);
+  if (!(await confirmar(total))) return;
+  const base = `${GR.actual.id.replace(/\//g, '__')}@@${selloT()}`;
+  const b = $('#fEnviar'); b.disabled = true;
+  try {
+    for (let k = 0; k < n; k++) {
+      b.textContent = `Enviando ${k + 1}/${n}…`;
+      const r = await fetch(`${BUZON}/entrada/${encodeURIComponent(`${base}--f${String(k + 1).padStart(2, '0')}.${GR.ext}`)}`, {method: 'PUT', headers: hdr({'Content-Type': 'application/json'}), body: JSON.stringify({message: `Frase ${k + 1}/${n}`, content: await aB64(GR.frases[k].blob)})});
+      if (!r.ok) throw new Error(r.status);
+    }
+    await ponerBuzon(`entrada/${base}.frases.json`, JSON.stringify({n, ext: GR.ext, total}), 'Frases completas');
+    GR.enviados.unshift({tema: GR.actual.tema + ` (${n} frases)`, cuando: new Date().toISOString()});
+    GR.enviados = GR.enviados.slice(0, 10); guardar('dg-enviados', JSON.stringify(GR.enviados));
+    GR.frases = []; soltarFlujo();
+    $('#prompter').classList.add('oculto'); document.body.style.overflow = '';
+    if (typeof confeti === 'function') try { confeti(); } catch (e) {}
+    aviso('✔ Enviado · la PC une las frases y lo deja en su carpeta', 4500);
+    pintar();
+  } catch (e) { aviso('✖ No se pudo enviar (' + e.message + '). Vuelve a tocar «Enviar».', 5000); }
+  b.disabled = false; b.textContent = 'Enviar a la PC ➜';
+}
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('[data-pmodo],#fEsc,#fRep,#fSig,[data-fplay],[data-frep],#fEnviar,#fDeNuevo,#ideaEnviar');
+  if (!t) return;
+  if (t.dataset.pmodo) { if (GR.frases && GR.frases.some(Boolean) && !confirm('¿Cambiar de modo? Se pierden las frases grabadas.')) return; return setModoP(t.dataset.pmodo); }
+  if (t.id === 'fEsc') return GR.frases[GR.fi] && tocar(GR.frases[GR.fi].blob);
+  if (t.id === 'fRep') { $('#fBar').classList.add('oculto'); $('.precs').classList.remove('oculto'); return; }
+  if (t.id === 'fSig') return siguienteFrase();
+  if (t.dataset.fplay) return GR.frases[+t.dataset.fplay] && tocar(GR.frases[+t.dataset.fplay].blob);
+  if (t.dataset.frep) { GR.fi = +t.dataset.frep; GR.volverFin = true; modoPrompter('grabar'); $('#reloj').textContent = `Frase ${GR.fi + 1}`; marcarFrase(true); return; }
+  if (t.id === 'fEnviar') return enviarFrases();
+  if (t.id === 'fDeNuevo') { if (confirm('¿Borrar todas las frases y empezar de nuevo?')) setModoP('frases'); return; }
+  if (t.id === 'ideaEnviar') return enviarIdea();
+});
+
+// ================================================================== PEDIR UN GUION
+function tarjetaIdea() {
+  const env = JSON.parse(leer('dg-ideas-env') || '[]');
+  return `<div class="card gr-idea"><h3>💡 Pedir un guion</h3>
+    <textarea id="ideaTxt" rows="2" placeholder="Ej.: Ronaldinho en el PSG · ¿por qué se calientan los cables?"></textarea>
+    <div class="fila"><select id="ideaCanal"><option>Cualquiera</option><option>Delgafutbol</option><option>Delgatronics</option></select><button class="btn" id="ideaEnviar">Enviar idea</button></div>
+    ${env.length ? `<div class="hoy-sub" style="margin-top:10px">Enviadas: ${env.slice(0, 3).map((x) => '«' + esc(corta(x, 40)) + '»').join(' · ')}</div>` : ''}</div>`;
+}
+async function enviarIdea() {
+  const txt = ($('#ideaTxt').value || '').trim();
+  if (txt.length < 3) return $('#ideaTxt').focus();
+  try {
+    await ponerBuzon(`ideas/${selloT()}.json`, JSON.stringify({texto: txt, canal: $('#ideaCanal').value, cuando: new Date().toISOString()}), 'Idea de guion');
+    const env = JSON.parse(leer('dg-ideas-env') || '[]'); env.unshift(txt); guardar('dg-ideas-env', JSON.stringify(env.slice(0, 20)));
+    aviso('💡 Idea enviada · la uso en el próximo guion', 3500);
+    pintar();
+  } catch (e) { aviso('✖ No se pudo enviar (' + e.message + ')', 4000); }
+}

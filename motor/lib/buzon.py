@@ -220,27 +220,70 @@ def _subir_previas(items: list[dict], est: dict) -> None:
         avisar("👀 Video listo para revisar", it["tema"], "#grabar", est)
 
 
-# ------------------------------------------------------------------ audios entrantes (+ marcas ✂)
+# ------------------------------------------------------------------ audios entrantes (+ marcas ✂, + grabación por frases)
+def _destino_audio(nombre: str) -> tuple[Path, str]:
+    destino_id, _, resto = nombre.partition("@@")
+    carpeta = VIDEOS / destino_id.replace("__", "/")
+    if not resto or not carpeta.is_dir():
+        carpeta = VIDEOS / "_entrada"
+        carpeta.mkdir(exist_ok=True)
+    ext = Path(nombre).suffix.lower() or ".m4a"
+    tema = re.sub(r"^\d+-", "", carpeta.name) if carpeta.name != "_entrada" else "audio"
+    destino = carpeta / f"voz-{tema}{ext}"
+    n = 2
+    while destino.exists():
+        destino = carpeta / f"voz-{tema}-{n}{ext}"
+        n += 1
+    return destino, tema
+
+
+def _registrar_audio(destino: Path, tema: str, est: dict, extra: str = "") -> None:
+    with (VIDEOS / "_entrada-registro.txt").open("a", encoding="utf-8") as f:
+        f.write(f"{datetime.now():%Y-%m-%d %H:%M} {destino.relative_to(VIDEOS)}{extra}\n")
+    avisar("✔ Audio recibido en la PC", tema.replace("-", " ") + extra, "#grabar", est)
+
+
+def _unir_frases(partes: list[bytes], ext: str, destino: Path) -> None:
+    """Une las frases (cada una en su archivo) con 0,25 s de aire entre ellas; preparar_voz2 ajusta luego las pausas."""
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as tmp:
+        rutas = []
+        for i, b in enumerate(partes):
+            r = Path(tmp) / f"f{i:02d}{ext}"
+            r.write_bytes(b)
+            rutas.append(r)
+        entradas = sum((["-i", str(r)] for r in rutas), [])
+        filtro = "".join(f"[{i}:a]aresample=48000,aformat=channel_layouts=mono,apad=pad_dur=0.25[a{i}];" for i in range(len(rutas)))
+        filtro += "".join(f"[a{i}]" for i in range(len(rutas))) + f"concat=n={len(rutas)}:v=0:a=1[out]"
+        subprocess.run(["ffmpeg", "-loglevel", "error", "-y", *entradas, "-filter_complex", filtro, "-map", "[out]",
+                        "-c:a", "aac", "-b:a", "256k", str(destino.with_suffix(".m4a"))], check=True)
+
+
 def recoger(est: dict) -> list[Path]:
     bajados = []
-    items = _listar("entrada")
+    items = [it for it in _listar("entrada") if it["type"] == "file"]
     marcas = {it["name"].rsplit(".marcas.json", 1)[0]: it for it in items if it["name"].endswith(".marcas.json")}
+    # 1) grabaciones por frases: <base>--fNN.<ext> + <base>.frases.json (se unen cuando llegaron todas)
+    for man in [it for it in items if it["name"].endswith(".frases.json")]:
+        base = man["name"][: -len(".frases.json")]
+        info = _leer(man["path"]) or {}
+        partes = sorted([it for it in items if it["name"].startswith(base + "--f")], key=lambda it: it["name"])
+        if len(partes) < int(info.get("n", 0)):
+            continue  # todavía subiendo
+        ext = Path(partes[0]["name"]).suffix.lower() or ".m4a"
+        destino, tema = _destino_audio(base + ".m4a")
+        _unir_frases([_leer(it["path"], crudo=True) for it in partes], ext, destino)
+        for it in partes + [man]:
+            _borrar(it["path"], it["sha"], f"Recogido {it['name']}")
+        bajados.append(destino)
+        _registrar_audio(destino, tema, est, f" · {len(partes)} frases")
+    # 2) audios de una sola toma
     for it in items:
         nombre = it["name"]
-        if it["type"] != "file" or nombre.startswith(".") or nombre.endswith(".json"):
+        if nombre.startswith(".") or nombre.endswith(".json") or "--f" in nombre:
             continue
-        destino_id, _, resto = nombre.partition("@@")
-        carpeta = VIDEOS / destino_id.replace("__", "/")
-        if not resto or not carpeta.is_dir():
-            carpeta = VIDEOS / "_entrada"
-            carpeta.mkdir(exist_ok=True)
-        ext = Path(nombre).suffix.lower() or ".m4a"
-        tema = re.sub(r"^\d+-", "", carpeta.name) if carpeta.name != "_entrada" else "audio"
-        destino = carpeta / f"voz-{tema}{ext}"
-        n = 2
-        while destino.exists():
-            destino = carpeta / f"voz-{tema}-{n}{ext}"
-            n += 1
+        destino, tema = _destino_audio(nombre)
         destino.write_bytes(_leer(it["path"], crudo=True))
         _borrar(it["path"], it["sha"], f"Recogido {nombre}")
         base = Path(nombre).stem
@@ -249,11 +292,31 @@ def recoger(est: dict) -> list[Path]:
             destino.with_suffix(".marcas.json").write_bytes(_leer(m["path"], crudo=True))
             _borrar(m["path"], m["sha"], f"Recogido {m['name']}")
         bajados.append(destino)
-        with (VIDEOS / "_entrada-registro.txt").open("a", encoding="utf-8") as f:
-            f.write(f"{datetime.now():%Y-%m-%d %H:%M} {destino.relative_to(VIDEOS)}\n")
-        avisar("✔ Audio recibido en la PC", tema.replace("-", " "), "#grabar", est)
+        _registrar_audio(destino, tema, est)
     est["ultimo_audio"] = datetime.now().isoformat(timespec="minutes") if bajados else est.get("ultimo_audio")
     return bajados
+
+
+# ------------------------------------------------------------------ ideas («pedir guion» desde el celular)
+IDEAS = VIDEOS / "IDEAS-PEDIDAS.md"
+
+
+def ideas(est: dict) -> int:
+    n = 0
+    for it in _listar("ideas"):
+        if not it["name"].endswith(".json"):
+            continue
+        d = _leer(it["path"]) or {}
+        nuevo = not IDEAS.exists()
+        with IDEAS.open("a", encoding="utf-8") as f:
+            if nuevo:
+                f.write("# Ideas pedidas desde Delga Panel\n\nClaude: léelas antes de proponer temas; marca con ✅ las que ya tienen guion.\n\n")
+            f.write(f"- [ ] {d.get('cuando', '')[:16].replace('T', ' ')} · **{d.get('canal', 'cualquiera')}** · {d.get('texto', '').strip()}\n")
+        _borrar(it["path"], it["sha"], "Idea recibida")
+        n += 1
+    if n:
+        avisar("💡 Idea recibida", f"{n} idea{'s' if n > 1 else ''} anotada{'s' if n > 1 else ''}: la uso en el próximo guion.", "#grabar", est)
+    return n
 
 
 # ------------------------------------------------------------------ aprobaciones (publicar / pedir cambios)
@@ -401,6 +464,8 @@ def ciclo() -> None:
         print(f"✔ audio nuevo: {b.relative_to(VIDEOS)}")
     for x in aprobaciones(est):
         print(f"✔ {x}")
+    if ideas(est):
+        print('✔ ideas nuevas en IDEAS-PEDIDAS.md')
     n = respuestas(est)
     if n:
         print(f"✔ {n} respuesta(s) publicadas en YouTube")
